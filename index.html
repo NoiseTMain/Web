@@ -19,7 +19,8 @@
     --glass: rgba(255,255,255,0.6);
     --border: rgba(0,0,0,0.06);
     --text: #0f1724;
-    --red: #ef4444;
+    --red: #ef4444; /* Pro nemoc/útěk */
+    --orange: #f97316; /* Nová barva pro Útěk */
   }
   [data-theme='dark']{
     --bg: #05060a;
@@ -29,8 +30,9 @@
     --accent2: #047857;
     --glass: rgba(255,255,255,0.02);
     --border: rgba(255,255,255,0.06);
-    --text: #fdf6e3; /* krémová barva textu v dark modu */
+    --text: #fdf6e3;
     --red: #dc2626;
+    --orange: #c2410c;
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
@@ -121,6 +123,8 @@
   table.main tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
   .badge{ display:inline-block; padding:6px 8px; border-radius:8px; background:linear-gradient(90deg,var(--accent2),#34d399); color:#fff; font-weight:700; }
   .badge.danger{ background:var(--red); }
+  .badge.warning{ background:var(--orange); } /* Nový badge pro útěk */
+
 
   .muted{ color:var(--muted); font-size:0.88em; }
   .date-display{ text-align:right; margin-bottom:10px; color:var(--muted); font-weight:700; }
@@ -129,7 +133,6 @@
   .exports{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
   .exports button{ padding:10px 12px; border-radius:10px; border:0; cursor:pointer; background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; font-weight:700; }
   .exports .alt{ background:linear-gradient(90deg,#111827,#3f3f46); }
-  .exports .docx{ background:linear-gradient(90deg,#6b21a8,#a78bfa); }
   .exports .email{ background:linear-gradient(90deg, #f59e0b, #fbbf24); } /* Nový styl pro Email */
 
   /* stars */
@@ -177,7 +180,7 @@
   <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%">
     <div class="title">
       <h1>Rozpis služeb - Obořiště</h1>
-      <div class="sub muted">Aplikace vytvořena od A.Horvath</div>
+      <div class="sub muted">Plánovač směn kuchyně — moderně a přehledně</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <div id="todayShort" class="muted"></div>
@@ -212,7 +215,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <div>
           <h2>Rozpis směn</h2>
-          <div class="muted">Vyber startovní datum a počet týdnů. Rotace probíhá cyklicky.</div>
+          <div class="muted">Vyber startovní datum a počet týdnů. **Nepřítomní žáci se automaticky přeskočí.**</div>
         </div>
         <div class="controls">
           <input type="text" id="newStudent" placeholder="Jméno žáka (např. Jan Novák)"/>
@@ -238,7 +241,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <h3 class="muted">Tabulka rozpisu</h3>
-          <div class="muted">Označený řádek odpovídá aktuálnímu týdnu. Nemocní žáci jsou automaticky přeskočeni.</div>
+          <div class="muted">Označený řádek odpovídá aktuálnímu týdnu.</div>
         </div>
         <div class="muted">Počet žáků: <span id="studentCount" class="highlight">0</span></div>
       </div>
@@ -324,26 +327,34 @@
   <div class="modal-content" onclick="event.stopPropagation()">
     <div class="modal-header">
       <h2 id="modalStudentName"></h2>
-      <div id="modalIllnessBadge" class="badge danger" style="display:none">Nemocný</div>
+      <div id="modalAbsenceBadge" class="badge danger" style="display:none"></div>
       <button class="modal-close" onclick="closeStudentProfile()">&times;</button>
     </div>
 
     <div class="modal-section">
-      <label for="modalNote" class="modal-label">Poznámka</label>
+      <label for="modalNote" class="modal-label">Poznámka / Dlouhodobá preference</label>
       <textarea id="modalNote" rows="3" style="width:100%"></textarea>
     </div>
 
     <div class="modal-section">
-      <h4 style="margin-bottom:10px">Nastavení nemoci</h4>
+      <h4 style="margin-bottom:10px">Nastavení Nepřítomnosti (Nemoc/Útěk)</h4>
+
+      <label for="modalAbsenceType" class="modal-label" style="font-weight:400">Typ nepřítomnosti:</label>
+      <select id="modalAbsenceType" style="width:100%;margin-bottom:10px;">
+          <option value="">Není nepřítomen</option>
+          <option value="Nemoc">Nemoc</option>
+          <option value="Utek">Útěk / Zameškání</option>
+      </select>
+
       <div class="form-row" style="margin-top:0;justify-content:flex-start">
         <div class="muted">Od:</div>
-        <input type="date" id="modalIllnessFrom" style="min-width:130px;flex-grow:1"/>
+        <input type="date" id="modalAbsenceFrom" style="min-width:130px;flex-grow:1"/>
         <div class="muted">Do (volitelné):</div>
-        <input type="date" id="modalIllnessTo" style="min-width:130px;flex-grow:1"/>
+        <input type="date" id="modalAbsenceTo" style="min-width:130px;flex-grow:1"/>
       </div>
       <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn secondary" onclick="saveIllness()"><i class="fa fa-save"></i> Uložit nemoc</button>
-        <button class="btn secondary danger" onclick="clearIllness()"><i class="fa fa-times"></i> Zrušit nemoc</button>
+        <button class="btn secondary" onclick="saveAbsence()"><i class="fa fa-save"></i> Uložit nepřítomnost</button>
+        <button class="btn secondary danger" onclick="clearAbsence()"><i class="fa fa-times"></i> Zrušit</button>
       </div>
     </div>
 
@@ -353,15 +364,16 @@
     </div>
   </div>
 </div>
+
 <script>
 /* =========================
    Storage & data model
    ========================= */
-const LS_KEY = 'uklid_oboriste_v4'; // V4 pro nová pole v datech
-const LS_RATING = 'uklid_oboriste_ratings_v4';
+const LS_KEY = 'uklid_oboriste_v5'; // V5 pro novou strukturu žáků s absencí
+const LS_RATING = 'uklid_oboriste_ratings_v5';
 
 let store = {
-  students: [], // {name, note?, illness: {from: Date, to: Date|null}?}
+  students: [], // {name, note?, absence: {type: 'Nemoc'|'Utek'|'', from: Date, to: Date|null}?}
   ratings: {},  // name -> rating (1..5)
 };
 
@@ -371,7 +383,11 @@ function loadStore(){
     if(raw) store = JSON.parse(raw);
     // ensure new fields are present
     if(!store.students) store.students = [];
-    store.students = store.students.map(s => ({...s, note: s.note||'', illness: s.illness||null}));
+    store.students = store.students.map(s => ({
+        ...s,
+        note: s.note||'',
+        absence: s.absence||null // {type: '', from: '', to: ''}
+    }));
 
     const rawR = localStorage.getItem(LS_RATING);
     if(rawR) store.ratings = JSON.parse(rawR);
@@ -403,24 +419,30 @@ function showSection(e){
 /* STUDENT PROFILE MODAL */
 let currentStudentIndex = -1;
 
-function isStudentIll(studentName, date) {
+/**
+ * Kontroluje, zda je žák nepřítomen (nemocný/utekl) v daném datu.
+ * @param {string} studentName
+ * @param {Date} date - datum, které se kontroluje (ideálně začátek týdne).
+ * @returns {string|false} Vrací typ absence ('Nemoc'/'Utek') nebo false.
+ */
+function isStudentAbsent(studentName, date) {
     const student = store.students.find(s => s.name === studentName);
-    if (!student || !student.illness || !student.illness.from) return false;
+    if (!student || !student.absence || !student.absence.from || !student.absence.type) return false;
 
-    const from = new Date(student.illness.from);
+    const from = new Date(student.absence.from);
     from.setHours(0,0,0,0);
     const checkDate = new Date(date);
-    checkDate.setHours(12,0,0,0); // Check in middle of the day
+    checkDate.setHours(12,0,0,0); // Kontrola uprostřed dne
 
     if (checkDate < from) return false;
 
-    if (student.illness.to) {
-        const to = new Date(student.illness.to);
+    if (student.absence.to) {
+        const to = new Date(student.absence.to);
         to.setHours(23,59,59,999);
-        return checkDate <= to;
+        return checkDate <= to ? student.absence.type : false;
     }
 
-    return true; // Ill indefinitely
+    return student.absence.type; // Nepřítomen neomezeně
 }
 
 function openStudentProfile(index) {
@@ -431,36 +453,49 @@ function openStudentProfile(index) {
     $('modalStudentName').textContent = student.name;
     $('modalNote').value = student.note || '';
 
-    const isIll = isStudentIll(student.name, new Date());
-    $('modalIllnessBadge').style.display = isIll ? 'inline-block' : 'none';
+    const absenceType = isStudentAbsent(student.name, new Date());
+    const badge = $('modalAbsenceBadge');
+    badge.style.display = absenceType ? 'inline-block' : 'none';
 
-    if (student.illness) {
-        $('modalIllnessFrom').value = dateToISO(new Date(student.illness.from));
-        $('modalIllnessTo').value = student.illness.to ? dateToISO(new Date(student.illness.to)) : '';
+    if (absenceType) {
+        badge.textContent = absenceType;
+        badge.className = 'badge ' + (absenceType === 'Nemoc' ? 'danger' : 'warning');
+    }
+
+    if (student.absence) {
+        $('modalAbsenceType').value = student.absence.type || '';
+        $('modalAbsenceFrom').value = dateToISO(new Date(student.absence.from));
+        $('modalAbsenceTo').value = student.absence.to ? dateToISO(new Date(student.absence.to)) : '';
     } else {
-        $('modalIllnessFrom').value = '';
-        $('modalIllnessTo').value = '';
+        $('modalAbsenceType').value = '';
+        $('modalAbsenceFrom').value = '';
+        $('modalAbsenceTo').value = '';
     }
 
     $('studentProfileModal').classList.add('active');
 }
 
 function closeStudentProfile(event) {
-    if (event && event.target.id === 'studentProfileModal') {
-        // Kliknutí na overlay
-    } else if (event) {
-        // Zavřeno kliknutím na křížek
-    }
+    if (event && event.target.id === 'studentProfileModal') { /* Kliknutí na overlay */ }
     $('studentProfileModal').classList.remove('active');
     currentStudentIndex = -1;
 }
 
-function saveIllness() {
-    const from = $('modalIllnessFrom').value;
-    const to = $('modalIllnessTo').value;
+function saveAbsence() {
+    const type = $('modalAbsenceType').value;
+    const from = $('modalAbsenceFrom').value;
+    const to = $('modalAbsenceTo').value;
+
+    if (!type) {
+        store.students[currentStudentIndex].absence = null;
+        saveStore();
+        redrawAll();
+        openStudentProfile(currentStudentIndex);
+        return;
+    }
 
     if (!from) {
-        alert('Musíš zadat datum "Od".');
+        alert('Musíš zadat datum "Od", pokud je žák nepřítomen.');
         return;
     }
 
@@ -472,19 +507,20 @@ function saveIllness() {
         return;
     }
 
-    store.students[currentStudentIndex].illness = {
-        from: fromDate.toISOString().slice(0, 10), // Uložit jen datum pro jednoduchost
+    store.students[currentStudentIndex].absence = {
+        type: type,
+        from: fromDate.toISOString().slice(0, 10),
         to: toDate ? toDate.toISOString().slice(0, 10) : null
     };
 
     saveStore();
     redrawAll();
-    openStudentProfile(currentStudentIndex); // Znovuotevřít pro aktualizaci odznaku
+    openStudentProfile(currentStudentIndex);
 }
 
-function clearIllness() {
-    if (confirm(`Opravdu zrušit veškeré nastavení nemoci pro ${store.students[currentStudentIndex].name}?`)) {
-        store.students[currentStudentIndex].illness = null;
+function clearAbsence() {
+    if (confirm(`Opravdu zrušit veškeré nastavení nepřítomnosti pro ${store.students[currentStudentIndex].name}?`)) {
+        store.students[currentStudentIndex].absence = null;
         saveStore();
         redrawAll();
         openStudentProfile(currentStudentIndex);
@@ -502,7 +538,7 @@ function deleteStudent() {
     const studentName = store.students[currentStudentIndex].name;
     if (confirm(`Opravdu smazat žáka "${studentName}"? Toto je nevratné.`)) {
         store.students.splice(currentStudentIndex, 1);
-        delete store.ratings[studentName]; // Smazat i hodnocení
+        delete store.ratings[studentName];
         saveStore();
         redrawAll();
         closeStudentProfile();
@@ -533,10 +569,12 @@ function renderStudentsList(){
 
     const meta = document.createElement('div'); meta.className='meta';
 
-    // Nemocný odznak
-    if (isStudentIll(sObj.name, new Date())) {
-        const badge = document.createElement('span'); badge.className = 'badge danger';
-        badge.textContent = 'Nemocný';
+    // Odznak Nemocný/Útěk
+    const absenceType = isStudentAbsent(sObj.name, new Date());
+    if (absenceType) {
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + (absenceType === 'Nemoc' ? 'danger' : 'warning');
+        badge.textContent = absenceType;
         meta.appendChild(badge);
     }
 
@@ -551,11 +589,11 @@ function renderStudentsList(){
     }
     meta.appendChild(stars);
 
-    // delete - ponecháno pro rychlé mazání v nastavení
+    // delete - ponecháno pro rychlé mazání v sekci nastavení
     const del = document.createElement('button'); del.className = 'btn secondary'; del.style.marginLeft='8px';
     del.innerHTML = '<i class="fa fa-trash"></i>';
     del.onclick = ()=>{
-      if(confirm(`Opravdu smazat žáka "${sObj.name}"?`)){
+      if(confirm(`Opravdu smazat žáka "${sObj.name}"? Tím smažeš i hodnocení.`)){
         store.students.splice(idx,1);
         delete store.ratings[sObj.name];
         saveStore();
@@ -576,15 +614,18 @@ function renderStudentsList(){
 
   // ratings section
   $('ratingsList').innerHTML = '';
-  // Clone nodes without event listeners for ratings section to prevent multiple profile modals
+  // Ruční mapování kliku pro zobrazení profilu v sekci Hodnocení
   const ratingsListClone = listContainer.cloneNode(true);
-  ratingsListClone.querySelectorAll('.name').forEach((nameEl, idx) => {
-      // Re-map the click event for the clone if needed, or remove for simplicity
-      const originalStudent = store.students[idx];
-      nameEl.onclick = () => openStudentProfile(store.students.findIndex(s => s.name === originalStudent.name));
+  ratingsListClone.querySelectorAll('.name').forEach((nameEl) => {
+      const studentName = nameEl.textContent;
+      const studentIndex = store.students.findIndex(s => s.name === studentName);
+      if (studentIndex !== -1) {
+          nameEl.onclick = () => openStudentProfile(studentIndex);
+      }
   });
 
   $('ratingsList').appendChild(ratingsListClone);
+
 
   // update counters
   $('studentCount').textContent = store.students.length;
@@ -621,16 +662,18 @@ function renderRatings(){
 
     const info = document.createElement('div'); info.style.marginLeft='8px';
     const nm = document.createElement('div'); nm.className='name'; nm.textContent = sObj.name;
-    nm.onclick = () => openStudentProfile(store.students.findIndex(s => s.name === sObj.name)); // Otevření profilu i zde
+    nm.onclick = () => openStudentProfile(store.students.findIndex(s => s.name === sObj.name));
     info.appendChild(nm);
     item.appendChild(info);
 
     const meta = document.createElement('div'); meta.className='meta';
 
-    // Nemocný odznak
-    if (isStudentIll(sObj.name, new Date())) {
-        const badge = document.createElement('span'); badge.className = 'badge danger';
-        badge.textContent = 'Nemocný';
+    // Odznak Nemocný/Útěk
+    const absenceType = isStudentAbsent(sObj.name, new Date());
+    if (absenceType) {
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + (absenceType === 'Nemoc' ? 'danger' : 'warning');
+        badge.textContent = absenceType;
         meta.appendChild(badge);
     }
 
@@ -647,7 +690,7 @@ function renderRatings(){
   });
 }
 
-/* assignments generation */
+/* assignments generation (s inteligencí pro přeskočení nepřítomných) */
 function generateAssignmentsFor(startDate, weeks){
   const out = [];
   const sArr = store.students.map(s=>s.name);
@@ -660,13 +703,13 @@ function generateAssignmentsFor(startDate, weeks){
     const sd = new Date(base.getFullYear(), base.getMonth(), base.getDate() + w*7);
     const ed = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + 6);
 
-    // Najít prvního žáka, který NENÍ nemocný v tomto týdnu
+    // Hledání žáka, který NENÍ nepřítomen
     let studentToAssign = null;
     let attempts = 0;
-    while(attempts < sArr.length * 2) { // Hledáme max 2x přes celou rotaci pro jistotu
+    while(attempts < sArr.length) {
         const potentialStudent = sArr[studentIndex % sArr.length];
-        // Kontrola, zda je žák nemocný v průběhu přiděleného týdne
-        if (!isStudentIll(potentialStudent, sd) && !isStudentIll(potentialStudent, ed)) {
+        // Kontrola, zda je žák nepřítomen (Nemoc/Útěk) v průběhu přiděleného týdne
+        if (!isStudentAbsent(potentialStudent, sd) && !isStudentAbsent(potentialStudent, ed)) {
             studentToAssign = potentialStudent;
             break;
         }
@@ -678,8 +721,8 @@ function generateAssignmentsFor(startDate, weeks){
       out.push({start: sd, end: ed, student: studentToAssign, note: ''});
       studentIndex++; // Posun na dalšího žáka v rotaci
     } else {
-        // Všichni žáci jsou nemocní, týden se přeskočí
-        out.push({start: sd, end: ed, student: 'NIKDO (všichni nemocní)', note: 'Tento týden byli všichni žáci nemocní, úklid se nekoná.'});
+        // Všichni žáci jsou nepřítomní/nemocní, týden se přeskočí
+        out.push({start: sd, end: ed, student: 'NIKDO (všichni nepřítomní)', note: 'Tento týden byli všichni žáci nepřítomni, služba se nekoná.'});
     }
   }
   return out;
@@ -696,7 +739,7 @@ function renderAssignmentsTable(assigns){
     const td1 = document.createElement('td'); td1.textContent = formatDate(row.start);
     const td2 = document.createElement('td'); td2.textContent = formatDate(row.end);
     const td3 = document.createElement('td'); td3.textContent = row.student;
-    // Ozdobení nemocného žáka v rozpisu, pokud by se tam objevil (přeskočení je primární)
+    // Vizuální indikace NIKDO
     if (row.student.includes('NIKDO')) {
         td3.style.color = 'var(--red)';
         td3.style.fontWeight = '700';
@@ -740,34 +783,39 @@ function sendEmail() {
     body += '\n\nS pozdravem,\nRozpis Služeb';
 
     const subject = 'Rozpis služeb Obořiště';
+    // Otevření mailto odkazu. Chrome/ostatní prohlížeče automaticky zakódují speciální znaky.
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     window.open(mailtoLink, '_self');
 }
 
-
-/* exports (původní) */
+/* exports (PNG/PDF) */
 async function exportPNG(clean=false){
   const node = document.getElementById('scheduleCard');
   const clone = node.cloneNode(true);
   clone.style.position='fixed'; clone.style.left='200%'; clone.style.top='0'; clone.style.padding='24px'; clone.style.background='#fff'; clone.style.color='#111827';
-  clone.querySelectorAll('button').forEach(b=>b.remove());
+  clone.querySelectorAll('.exports').forEach(b=>b.remove()); // Odstranit tlačítka pro čistý export
+  clone.querySelector('h3').style.color = '#000';
+  clone.querySelector('.muted').style.color = '#333';
   document.body.appendChild(clone);
   const canvas = await html2canvas(clone, {backgroundColor:'#ffffff', scale:2});
   document.body.removeChild(clone);
   const link = document.createElement('a'); link.download = 'rozpis.png'; link.href = canvas.toDataURL('image/png'); link.click();
 }
 
-async function exportJPG(){
-  const node = document.getElementById('scheduleCard');
-  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
-  const link = document.createElement('a'); link.download = 'rozpis.jpg'; link.href = canvas.toDataURL('image/jpeg', 0.92); link.click();
-}
-
 async function exportPDF(){
   const { jsPDF } = window.jspdf;
   const node = document.getElementById('scheduleCard');
-  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
+  const clone = node.cloneNode(true);
+  clone.style.position='fixed'; clone.style.left='200%'; clone.style.top='0'; clone.style.padding='24px'; clone.style.background='#fff'; clone.style.color='#111827';
+  clone.querySelectorAll('.exports').forEach(b=>b.remove());
+  clone.querySelector('h3').style.color = '#000';
+  clone.querySelector('.muted').style.color = '#333';
+  document.body.appendChild(clone);
+
+  const canvas = await html2canvas(clone, {backgroundColor:'#ffffff', scale:2});
+  document.body.removeChild(clone);
+
   const imgData = canvas.toDataURL('image/png');
   const pdf = new jsPDF({
     orientation: (canvas.width > canvas.height) ? 'landscape' : 'portrait',
@@ -789,14 +837,14 @@ function applySort(){
   renderAssignmentsTable(arr);
 }
 
-/* stats */
+/* stats (vypočítané, aby respektovaly absenci) */
 function computeStats(){
   const f = $('statFrom').value ? new Date($('statFrom').value) : null;
   const t = $('statTo').value ? new Date($('statTo').value) : null;
   if(!f || !t){ alert('Vyber prosím obě data (od i do).'); return; }
   f.setHours(0,0,0,0);
   t.setHours(23,59,59,999);
-  const weeks = Math.ceil((t - f)/(7*24*60*60*1000)) + 4;
+  const weeks = Math.ceil((t - f)/(7*24*60*60*1000)) + store.students.length; // +rezerva
   const assigns = generateAssignmentsFor(f, weeks);
   const counts = {};
   assigns.forEach(a=>{
@@ -815,23 +863,11 @@ function computeStats(){
   });
 }
 
-/* filters generate */
-function applyFilter(){
-  const f = $('filterFrom').value ? new Date($('filterFrom').value) : new Date();
-  const t = $('filterTo').value ? new Date($('filterTo').value) : new Date(f.getFullYear(), f.getMonth(), f.getDate() + 28);
-  const weeks = Math.max(1, Math.ceil((t - f)/(7*24*60*60*1000)));
-  const weeksAdjusted = Math.max(weeks, store.students.length + 4); // Přidat rezervu pro rotaci a nemocné
-  const assigns = generateAssignmentsFor(f, weeksAdjusted);
-  // filtruj jen ty, co spadají do filtru
-  const filtered = assigns.filter(a => new Date(a.start) >= f && new Date(a.end) <= t);
-  renderAssignmentsTable(filtered.length > 0 ? filtered : assigns.slice(0, weeks)); // Zobrazit buď filtr, nebo původní
-}
-
-/* generate now */
+/* generate now (generuje aktuální + 4 týdny jako výchozí) */
 function generateNow(){
   const from = $('genFrom').value ? new Date($('genFrom').value) : new Date();
   let weeks = parseInt($('genWeeks').value,10) || 4;
-  weeks = Math.max(weeks, store.students.length + 4); // Rezerva pro rotaci a nemocné
+  weeks = Math.max(weeks, store.students.length);
   const assigns = generateAssignmentsFor(from, weeks);
   renderAssignmentsTable(assigns);
 }
@@ -855,41 +891,44 @@ function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt
 
 /* settings */
 function clearAll(){
-  if(!confirm('Opravdu vymazat všechna data?')) return;
+  if(!confirm('Opravdu vymazat všechna data? (Žáci, hodnocení, rozpisy). TOTO JE NEVRATNÉ!')) return;
   localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_RATING);
   store = {students:[], ratings:{}};
   redrawAll();
 }
 function exportAllJSON(){
   const blob = new Blob([JSON.stringify(store,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uklid_data.json'; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uklid_data_zaloha.json'; a.click();
 }
 
 /* redraw / orchestrace */
 function redrawAll(){
   loadStore();
   todayShort();
-  // no default students - leave empty so user adds their own
   if(!store.students) store.students = [];
   if(!store.ratings) store.ratings = {};
   renderStudentsList();
-  // set defaults
-  const now = new Date();
-  if(!$('genFrom').value) $('genFrom').value = now.toISOString().slice(0,10);
-  const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate()+28);
-  if(!$('filterFrom').value) $('filterFrom').value = now.toISOString().slice(0,10);
-  if(!$('filterTo').value) $('filterTo').value = tom.toISOString().slice(0,10);
-  if(!$('statFrom').value) $('statFrom').value = now.toISOString().slice(0,10);
-  if(!$('statTo').value) $('statTo').value = tom.toISOString().slice(0,10);
 
-  // initial assignments (empty if no students)
-  const weeks = Math.max(4, store.students.length + 4);
-  const assigns = generateAssignmentsFor(new Date(), weeks);
-  renderAssignmentsTable(assigns);
+  // Nastavení výchozích dat na aktuální datum
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const fourWeeks = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 28);
+
+  $('genFrom').value = now.toISOString().slice(0,10);
+  $('filterFrom').value = now.toISOString().slice(0,10);
+  $('filterTo').value = fourWeeks.toISOString().slice(0,10);
+  $('statFrom').value = now.toISOString().slice(0,10);
+  $('statTo').value = fourWeeks.toISOString().slice(0,10);
+
+
+  // PŮVODNÍ ÚPRAVA: Generovat automaticky rozpis na 4 týdny od dnešního data
+  const weeks = parseInt($('genWeeks').value,10) || 4;
+  const assignmentsToRender = generateAssignmentsFor(now, weeks);
+  renderAssignmentsTable(assignmentsToRender);
   renderRatings();
 }
 
-/* theme & starfield animation */
+/* theme & starfield animation (beze změny) */
 let starfieldCtx = null;
 let stars = [];
 let starAnimId = null;
@@ -980,7 +1019,7 @@ function addStudent(){
   if(!val) return alert('Zadej jméno žáka.');
   // prevent duplicates
   if((store.students||[]).some(s=>s.name.toLowerCase()===val.toLowerCase())){ alert('Tento žák je již v seznamu.'); return; }
-  store.students.push({name: val, note: '', illness: null});
+  store.students.push({name: val, note: '', absence: null});
   saveStore();
   $('newStudent').value='';
   redrawAll();
