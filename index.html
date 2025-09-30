@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rozpis služeb - Obořiště</title>
+
+<!-- Ikony & knihovny -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  :root{
+    --bg: #f6f7fb;
+    --card: #ffffff;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent2: #10b981;
+    --glass: rgba(255,255,255,0.6);
+    --border: rgba(0,0,0,0.06);
+  }
+  [data-theme='dark']{
+    --bg: #071028;
+    --card: #0f1724;
+    --muted: #9aa6b2;
+    --accent: #1e40af;
+    --accent2: #047857;
+    --glass: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.06);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:Inter, "Segoe UI", Tahoma, sans-serif;
+    background: linear-gradient(180deg,var(--bg), #eef2ff);
+    color: #0f1724;
+    padding-bottom:40px;
+    transition:all .25s;
+  }
+  [data-theme='dark'] body{ color:#e6eef8 }
+
+  /* header with marble border */
+  header{
+    background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    padding:20px 18px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:14px solid #e6e6e6;
+    border-image: url('https://www.transparenttextures.com/patterns/marble.png') 30 repeat;
+  }
+  .title{ display:flex; flex-direction:column; }
+  .title h1{ font-size:20px; margin-bottom:4px; }
+  .title .sub{ font-size:12px; color:var(--muted) }
+
+  .wrap{max-width:1100px;margin:16px auto;padding:0 18px}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .controls{display:flex;gap:8px;align-items:center}
+
+  .card{
+    background:var(--card);
+    border-radius:12px;
+    padding:18px;
+    box-shadow: 0 8px 30px rgba(15,23,42,0.06);
+    border:1px solid var(--border);
+    transition:transform .18s ease, box-shadow .18s ease, background .25s;
+  }
+  .card + .card{ margin-top:14px }
+  .card:hover{ transform: translateY(-4px); box-shadow:0 18px 40px rgba(2,6,23,0.08) }
+
+  /* nav */
+  .nav{ display:flex; gap:8px; background:transparent; padding:6px; border-radius:10px; }
+  .nav button{ background:transparent; border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; color:var(--muted); font-weight:700; }
+  .nav button.active{ background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; border-color:transparent; }
+
+  /* forms */
+  .form-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  input[type=text], input[type=date], select{
+    padding:10px 12px; border-radius:8px; border:1px solid var(--border); min-width:150px; background:transparent; color:inherit;
+  }
+  .btn{ display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:700; }
+  .btn.secondary{ background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:700; }
+
+  /* student list */
+  .student-list{ list-style:none; margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; padding:0; }
+  .student-item{ display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; border:1px solid var(--border); background:linear-gradient(180deg,var(--glass),transparent); }
+  .student-item .name{ font-weight:700 }
+  .student-item .meta{ margin-left:auto; display:flex; gap:8px; align-items:center }
+
+  /* table */
+  .table-wrap{ overflow:auto; margin-top:8px }
+  table.main{ width:100%; border-collapse:collapse; min-width:720px; background:var(--card); border-radius:8px; overflow:hidden; }
+  table.main thead th{ text-align:left; padding:12px; background:var(--accent); color:#fff; font-weight:800; font-size:0.95em; }
+  table.main tbody td{ padding:12px; border-bottom:1px dashed rgba(0,0,0,0.06); vertical-align:middle; }
+  table.main tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
+  .badge{ display:inline-block; padding:6px 8px; border-radius:8px; background:linear-gradient(90deg,var(--accent2),#34d399); color:#fff; font-weight:700; }
+
+  .muted{ color:var(--muted); font-size:0.88em; }
+  .date-display{ text-align:right; margin-bottom:10px; color:var(--muted); font-weight:700; }
+
+  /* exports */
+  .exports{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+  .exports button{ padding:10px 12px; border-radius:10px; border:0; cursor:pointer; background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; font-weight:700; }
+  .exports .alt{ background:linear-gradient(90deg,#111827,#3f3f46); }
+  .exports .docx{ background:linear-gradient(90deg,#6b21a8,#a78bfa); }
+
+  /* stars */
+  .stars{ display:inline-flex; gap:6px; align-items:center; }
+  .star{ cursor:pointer; color:#ffd66b; font-size:1.05em }
+  .star.inactive{ color:#cbd5e1 }
+
+  .stat-list{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px; }
+  .stat-card{ padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.6), transparent); border:1px solid var(--border) }
+
+  @media(max-width:820px){
+    .topbar{ flex-direction:column; gap:8px; align-items:stretch }
+    .form-row{ flex-direction:column; align-items:stretch }
+    table.main{ min-width:600px }
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%">
+    <div class="title">
+      <h1>Rozpis služeb - Obořiště</h1>
+      <div class="sub muted">Plánovač směn kuchyně — moderně a přehledně</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="todayShort" class="muted"></div>
+      <button class="btn secondary" onclick="toggleTheme()" id="themeBtn"><i class="fa fa-moon"></i> Přepnout motiv</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="topbar">
+    <div class="nav card" role="navigation" aria-label="Sekce">
+      <button class="active" data-section="schedule" onclick="showSection(event)">Rozpis</button>
+      <button data-section="ratings" onclick="showSection(event)">Hodnocení</button>
+      <button data-section="stats" onclick="showSection(event)">Statistiky</button>
+      <button data-section="settings" onclick="showSection(event)">Nastavení</button>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="card" style="display:flex;gap:8px;align-items:center">
+        <div class="muted">Filtr - Od</div>
+        <input type="date" id="filterFrom" />
+        <div class="muted">Do</div>
+        <input type="date" id="filterTo" />
+        <button class="btn secondary" onclick="applyFilter()">Aplikovat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: Rozpis -->
+  <section id="section-schedule">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <h2>Rozpis směn</h2>
+          <div class="muted">Vyber startovní datum a počet týdnů. Rotace probíhá cyklicky (pokud je žáků více než týdnů, pokračuje do dalšího období).</div>
+        </div>
+        <div class="controls">
+          <input type="text" id="newStudent" placeholder="Jméno žáka (např. Jan Novák)"/>
+          <button class="btn" onclick="addStudent()"><i class="fa fa-plus"></i> Přidat</button>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:14px">
+        <div class="muted">Generovat od:</div>
+        <input type="date" id="genFrom" />
+        <div class="muted">Počet týdnů:</div>
+        <select id="genWeeks">
+          <option value="4">4</option>
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="24">24</option>
+        </select>
+        <button class="btn secondary" onclick="generateNow()"><i class="fa fa-sync-alt"></i> Vygenerovat</button>
+      </div>
+    </div>
+
+    <div class="card" id="scheduleCard">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h3 class="muted">Tabulka rozpisu</h3>
+          <div class="muted">Označený řádek odpovídá aktuálnímu týdnu.</div>
+        </div>
+        <div class="muted">Počet žáků: <span id="studentCount" class="highlight"></span></div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="main" id="mainTable">
+          <thead>
+            <tr><th>Od</th><th>Do</th><th>Žák</th><th>Poznámka</th></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="exports" style="justify-content:space-between">
+        <div style="display:flex;gap:8px">
+          <button class="alt" onclick="exportPNG(true)"><i class="fa fa-file-image"></i> PNG (čistě)</button>
+          <button onclick="exportJPG()"><i class="fa fa-image"></i> JPG</button>
+          <button onclick="exportPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
+          <button class="docx" onclick="exportDOCX()"><i class="fa fa-file-word"></i> DOCX</button>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="muted">Řadit podle:</div>
+          <select id="sortSelect" onchange="applySort()">
+            <option value="date">Datum</option>
+            <option value="student_asc">Žák A→Z</option>
+            <option value="student_desc">Žák Z→A</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: Hodnocení -->
+  <section id="section-ratings" style="display:none">
+    <div class="card">
+      <h2>Hodnocení žáků</h2>
+      <div class="muted">Klikni na hvězdičky u žáka pro jeho hodnocení (1–5). Lze seřadit podle hodnocení.</div>
+      <div style="margin-top:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="muted">Řadit podle:</div>
+          <select id="ratingSort" onchange="renderRatings()">
+            <option value="default">Výchozí pořadí</option>
+            <option value="rating_desc">Hodnocení (nejlepší)</option>
+            <option value="rating_asc">Hodnocení (nejhorší)</option>
+            <option value="count_desc">Počet úklidů (nejvíce)</option>
+          </select>
+        </div>
+
+        <div id="ratingsList" class="student-list" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: Statistiky -->
+  <section id="section-stats" style="display:none">
+    <div class="card">
+      <h2>Statistiky úklidů</h2>
+      <div class="muted">Vyber období a spočítej, kolikrát měl kdo úklid v tomto období.</div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <div class="muted">Od</div><input type="date" id="statFrom" />
+        <div class="muted">Do</div><input type="date" id="statTo" />
+        <button class="btn secondary" onclick="computeStats()">Spočítat</button>
+      </div>
+
+      <div class="stat-list" id="statCards" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- SECTION: Nastavení -->
+  <section id="section-settings" style="display:none">
+    <div class="card">
+      <h2>Nastavení</h2>
+      <p class="muted">Data se ukládají do prohlížeče (localStorage). Zde můžeš exportovat všechna data jako JSON nebo vše smazat.</p>
+
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn" onclick="exportAllJSON()"><i class="fa fa-download"></i> Exportovat data (JSON)</button>
+        <button class="btn secondary" onclick="clearAll()"><i class="fa fa-trash"></i> Vymazat data</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* =========================
+   Storage & data model
+   ========================= */
+const LS_KEY = 'uklid_oboriste_v2';
+const LS_RATING = 'uklid_oboriste_ratings_v2';
+
+let store = {
+  students: [], // {name, note?}
+  ratings: {},  // name -> rating (1..5)
+};
+
+function loadStore(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) store = JSON.parse(raw);
+    const rawR = localStorage.getItem(LS_RATING);
+    if(rawR) store.ratings = JSON.parse(rawR);
+  }catch(e){
+    console.warn('Load error',e);
+  }
+}
+function saveStore(){
+  localStorage.setItem(LS_KEY, JSON.stringify(store));
+  localStorage.setItem(LS_RATING, JSON.stringify(store.ratings||{}));
+}
+
+/* helpers */
+function $(id){return document.getElementById(id)}
+function formatDate(d){ const dt = new Date(d); return dt.toLocaleDateString('cs-CZ'); }
+function todayShort(){ const n = new Date(); $('todayShort').textContent = n.toLocaleDateString('cs-CZ'); }
+
+/* nav */
+function showSection(e){
+  const btn = e.currentTarget;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const sec = btn.getAttribute('data-section');
+  document.querySelectorAll('main section').forEach(s => s.style.display = 'none');
+  $('section-'+sec).style.display = '';
+}
+
+/* students list UI (used in multiple sections) */
+function renderStudentsList(){
+  // schedule area list (top)
+  const listContainer = document.createElement('div');
+  listContainer.className = 'student-list';
+  (store.students||[]).forEach((sObj, idx)=>{
+    const item = document.createElement('div'); item.className = 'student-item';
+    const avatar = document.createElement('div'); avatar.style.width='44px'; avatar.style.height='44px'; avatar.style.borderRadius='8px';
+    avatar.style.display='flex'; avatar.style.alignItems='center'; avatar.style.justifyContent='center';
+    const color = pickColor(sObj.name);
+    avatar.style.background = `linear-gradient(135deg, ${color}, ${shadeColor(color, -12)})`;
+    avatar.style.color='#fff'; avatar.style.fontWeight='700';
+    avatar.textContent = sObj.name.split(' ').map(p=>p[0]).slice(0,2).join('');
+    item.appendChild(avatar);
+
+    const info = document.createElement('div'); info.style.marginLeft='8px';
+    const nm = document.createElement('div'); nm.className='name'; nm.textContent = sObj.name;
+    const note = document.createElement('div'); note.className='muted'; note.textContent = sObj.note || '';
+    info.appendChild(nm); info.appendChild(note);
+    item.appendChild(info);
+
+    const meta = document.createElement('div'); meta.className='meta';
+    // rating stars
+    const stars = document.createElement('div'); stars.className='stars';
+    const r = store.ratings[sObj.name] || 0;
+    for(let k=1;k<=5;k++){
+      const i = document.createElement('i'); i.className = 'star fa fa-star ' + (k<=r ? '' : 'inactive');
+      i.dataset.index = k;
+      i.onclick = ()=>{ setRating(sObj.name, k); };
+      stars.appendChild(i);
+    }
+    meta.appendChild(stars);
+
+    // delete
+    const del = document.createElement('button'); del.className = 'btn secondary'; del.style.marginLeft='8px';
+    del.innerHTML = '<i class="fa fa-trash"></i>';
+    del.onclick = ()=>{ store.students.splice(idx,1); saveStore(); redrawAll(); };
+    meta.appendChild(del);
+
+    item.appendChild(meta);
+    listContainer.appendChild(item);
+  });
+
+  // replace both places: schedule top area and ratings area
+  // schedule top area: insert before table in schedule section
+  const scheduleArea = document.querySelector('#section-schedule .card .controls');
+  // Actually we don't replace controls; instead we put list into a dedicated spot if exists
+  // Insert student-list under the controls (if not present)
+  // We'll insert into a dedicated place in the first card (create if not)
+  let schedFirstCard = document.querySelector('#section-schedule .card');
+  let existingList = schedFirstCard.querySelector('.student-list');
+  if(existingList) existingList.replaceWith(listContainer.cloneNode(true));
+  else schedFirstCard.appendChild(listContainer.cloneNode(true));
+
+  // ratings section
+  $('ratingsList').innerHTML = '';
+  $('ratingsList').appendChild(listContainer.cloneNode(true));
+
+  // update counters
+  $('studentCount').textContent = store.students.length;
+}
+
+/* ratings */
+function setRating(name, value){
+  store.ratings[name] = value;
+  saveStore();
+  renderStudentsList();
+}
+function renderRatings(){
+  // ratings list is same as renderStudentsList but sorted
+  const sort = $('ratingSort') ? $('ratingSort').value : 'default';
+  let arr = [...store.students];
+  if(sort === 'rating_desc') arr.sort((a,b)=>(store.ratings[b.name]||0)-(store.ratings[a.name]||0));
+  if(sort === 'rating_asc') arr.sort((a,b)=>(store.ratings[a.name]||0)-(store.ratings[b.name]||0));
+  if(sort === 'count_desc') {
+    // compute counts over a default period (last 12 months estimate) - use generateAssignmentsFor and count
+    const counts = {};
+    const weeks = 52;
+    const assigns = generateAssignmentsFor(new Date(), weeks);
+    assigns.forEach(a=> counts[a.student] = (counts[a.student]||0)+1);
+    arr.sort((a,b)=>(counts[b.name]||0)-(counts[a.name]||0));
+  }
+  // render simple list
+  const container = $('ratingsList'); container.innerHTML = '';
+  arr.forEach(sObj=>{
+    const item = document.createElement('div'); item.className = 'student-item';
+    const avatar = document.createElement('div'); avatar.style.width='44px'; avatar.style.height='44px'; avatar.style.borderRadius='8px';
+    avatar.style.display='flex'; avatar.style.alignItems='center'; avatar.style.justifyContent='center';
+    const color = pickColor(sObj.name);
+    avatar.style.background = `linear-gradient(135deg, ${color}, ${shadeColor(color, -12)})`;
+    avatar.style.color='#fff'; avatar.style.fontWeight='700';
+    avatar.textContent = sObj.name.split(' ').map(p=>p[0]).slice(0,2).join('');
+    item.appendChild(avatar);
+
+    const info = document.createElement('div'); info.style.marginLeft='8px';
+    const nm = document.createElement('div'); nm.className='name'; nm.textContent = sObj.name;
+    info.appendChild(nm);
+    item.appendChild(info);
+
+    const meta = document.createElement('div'); meta.className='meta';
+    const rating = store.ratings[sObj.name] || 0;
+    const stars = document.createElement('div'); stars.className='stars';
+    for(let k=1;k<=5;k++){
+      const i = document.createElement('i'); i.className = 'star fa fa-star ' + (k<=rating ? '' : 'inactive');
+      i.onclick = ()=>{ setRating(sObj.name, k); renderRatings(); };
+      stars.appendChild(i);
+    }
+    meta.appendChild(stars);
+    item.appendChild(meta);
+    container.appendChild(item);
+  });
+}
+
+/* assignments generation */
+function generateAssignmentsFor(startDate, weeks){
+  const out = [];
+  const sArr = store.students.map(s=>s.name);
+  if(sArr.length === 0) return out;
+  const start = new Date(startDate);
+  let base = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  for(let w=0; w<weeks; w++){
+    const sd = new Date(base.getFullYear(), base.getMonth(), base.getDate() + w*7);
+    const ed = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + 6);
+    const student = sArr[w % sArr.length];
+    out.push({start: sd, end: ed, student, note: ''});
+  }
+  return out;
+}
+
+/* render table */
+let currentAssignments = [];
+function renderAssignmentsTable(assigns){
+  currentAssignments = assigns;
+  const tbody = $('tableBody');
+  tbody.innerHTML = '';
+  assigns.forEach((row, idx)=>{
+    const tr = document.createElement('tr');
+    const td1 = document.createElement('td'); td1.textContent = formatDate(row.start);
+    const td2 = document.createElement('td'); td2.textContent = formatDate(row.end);
+    const td3 = document.createElement('td'); td3.textContent = row.student;
+    const td4 = document.createElement('td'); 
+    const noteIn = document.createElement('input'); noteIn.type='text'; noteIn.placeholder='Poznámka...';
+    noteIn.style.padding='6px'; noteIn.style.borderRadius='6px'; noteIn.style.border='1px solid var(--border)';
+    noteIn.value = row.note || '';
+    noteIn.onchange = (e)=>{ row.note = e.target.value; };
+    td4.appendChild(noteIn);
+
+    // highlight current week
+    const now = new Date();
+    if(now >= row.start && now <= row.end){
+      td1.classList.add('today'); td2.classList.add('today'); td3.classList.add('today');
+    }
+
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+    tbody.appendChild(tr);
+  });
+}
+
+/* exports */
+async function exportPNG(clean=false){
+  const node = document.getElementById('scheduleCard');
+  // for clean export create clone with white background and simplified styles
+  const clone = node.cloneNode(true);
+  clone.style.position='fixed'; clone.style.left='200%'; clone.style.top='0'; clone.style.padding='24px'; clone.style.background='#fff'; clone.style.color='#111827';
+  // remove buttons from clone
+  clone.querySelectorAll('button').forEach(b=>b.remove());
+  document.body.appendChild(clone);
+  const canvas = await html2canvas(clone, {backgroundColor:'#ffffff', scale:2});
+  document.body.removeChild(clone);
+  const link = document.createElement('a'); link.download = 'rozpis.png'; link.href = canvas.toDataURL('image/png'); link.click();
+}
+
+async function exportJPG(){
+  const node = document.getElementById('scheduleCard');
+  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
+  const link = document.createElement('a'); link.download = 'rozpis.jpg'; link.href = canvas.toDataURL('image/jpeg', 0.92); link.click();
+}
+
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const node = document.getElementById('scheduleCard');
+  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
+  const imgData = canvas.toDataURL('image/png');
+  // create PDF sized to image
+  const pdf = new jsPDF({
+    orientation: (canvas.width > canvas.height) ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [canvas.width, canvas.height]
+  });
+  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+  pdf.save('rozpis.pdf');
+}
+
+function exportDOCX(){
+  // convert currentAssignments into HTML table string (monochrome)
+  let html = '<!doctype html><html><head><meta charset="utf-8"><title>Rozpis</title></head><body>';
+  html += '<h2>Rozpis služeb - Obořiště</h2>';
+  html += '<table border="1" cellpadding="6" style="border-collapse:collapse">';
+  html += '<thead><tr><th>Od</th><th>Do</th><th>Žák</th><th>Poznámka</th></tr></thead><tbody>';
+  currentAssignments.forEach(r=>{
+    html += `<tr><td>${formatDate(r.start)}</td><td>${formatDate(r.end)}</td><td>${escapeHtml(r.student)}</td><td>${escapeHtml(r.note||'')}</td></tr>`;
+  });
+  html += '</tbody></table></body></html>';
+  const blob = new Blob([html], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'});
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'rozpis.docx'; link.click();
+}
+
+/* sorting */
+function applySort(){
+  const sel = $('sortSelect').value;
+  if(!currentAssignments || currentAssignments.length===0) return;
+  let arr = [...currentAssignments];
+  if(sel==='date'){ arr.sort((a,b)=> a.start - b.start); }
+  if(sel==='student_asc'){ arr.sort((a,b)=> a.student.localeCompare(b.student,'cs')); }
+  if(sel==='student_desc'){ arr.sort((a,b)=> b.student.localeCompare(a.student,'cs')); }
+  renderAssignmentsTable(arr);
+}
+
+/* stats */
+function computeStats(){
+  const f = $('statFrom').value ? new Date($('statFrom').value) : null;
+  const t = $('statTo').value ? new Date($('statTo').value) : null;
+  if(!f || !t){ alert('Vyber prosím obě data (od i do).'); return; }
+  // generate many weeks to cover range
+  const weeks = Math.ceil((t - f)/(7*24*60*60*1000)) + 4;
+  const assigns = generateAssignmentsFor(f, weeks);
+  const counts = {};
+  assigns.forEach(a=>{
+    if(a.start >= f && a.end <= t){
+      counts[a.student] = (counts[a.student]||0) + 1;
+    }
+  });
+  const items = Object.keys(counts).map(name => ({name, count: counts[name]})).sort((a,b)=>b.count-a.count);
+  const cont = $('statCards'); cont.innerHTML = '';
+  items.forEach(it=>{
+    const card = document.createElement('div'); card.className='stat-card';
+    card.innerHTML = `<div style="font-weight:800">${it.name}</div><div class="muted">Počet úklidů: <span style="font-weight:800">${it.count}</span></div>`;
+    cont.appendChild(card);
+  });
+}
+
+/* filters generate */
+function applyFilter(){
+  const f = $('filterFrom').value ? new Date($('filterFrom').value) : new Date();
+  const t = $('filterTo').value ? new Date($('filterTo').value) : new Date(f.getFullYear(), f.getMonth(), f.getDate() + 28);
+  const weeks = Math.max(1, Math.ceil((t - f)/(7*24*60*60*1000)));
+  const assigns = generateAssignmentsFor(f, weeks);
+  renderAssignmentsTable(assigns);
+}
+
+/* generate now */
+function generateNow(){
+  const from = $('genFrom').value ? new Date($('genFrom').value) : new Date();
+  const weeks = parseInt($('genWeeks').value,10) || 4;
+  const assigns = generateAssignmentsFor(from, weeks);
+  renderAssignmentsTable(assigns);
+}
+
+/* utilities */
+function pickColor(seed){
+  const colors = ['#f97316','#ef4444','#f59e0b','#10b981','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
+  let s=0; for(let i=0;i<seed.length;i++) s += seed.charCodeAt(i);
+  return colors[s % colors.length];
+}
+function shadeColor(hex, percent){
+  const col = hex.replace('#','');
+  const num = parseInt(col,16);
+  let r = (num >> 16) + Math.round(255 * percent / 100);
+  let g = ((num >> 8) & 0x00FF) + Math.round(255 * percent / 100);
+  let b = (num & 0x0000FF) + Math.round(255 * percent / 100);
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return '#' + ( (1<<24) + (r<<16) + (g<<8) + b ).toString(16).slice(1);
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* settings */
+function clearAll(){
+  if(!confirm('Opravdu vymazat všechna data?')) return;
+  localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_RATING);
+  store = {students:[], ratings:{}};
+  redrawAll();
+}
+function exportAllJSON(){
+  const blob = new Blob([JSON.stringify(store,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uklid_data.json'; a.click();
+}
+
+/* redraw / orchestrace */
+function redrawAll(){
+  loadStore();
+  todayShort();
+  // default students if empty
+  if(!store.students || store.students.length===0){
+    store.students = [{name:'Jan Novák'},{name:'Pavel Svoboda'},{name:'Lucie Černá'},{name:'Eva Dvořáková'}];
+    saveStore();
+  }
+  renderStudentsList();
+  // set defaults
+  const now = new Date();
+  $('genFrom').value = now.toISOString().slice(0,10);
+  const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate()+28);
+  $('filterFrom').value = now.toISOString().slice(0,10);
+  $('filterTo').value = tom.toISOString().slice(0,10);
+  $('statFrom').value = now.toISOString().slice(0,10);
+  $('statTo').value = tom.toISOString().slice(0,10);
+
+  // initial assignments
+  generateNow();
+  renderRatings();
+}
+
+/* theme */
+function toggleTheme(){
+  const body = document.body;
+  const t = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  body.setAttribute('data-theme', t);
+}
+
+/* init */
+(function init(){
+  loadStore();
+  // ensure store structure
+  if(!store.students) store.students = [];
+  if(!store.ratings) store.ratings = {};
+  todayShort();
+  redrawAll();
+})();
+
+</script>
+</body>
+</html>
