@@ -2,12 +2,11 @@
 <html lang="cs">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>Rozpis služeb - Obořiště</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   :root{
@@ -34,7 +33,11 @@
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  html,body{
+    height:100%;
+    /* ZAKÁZÁNÍ SCROLLOVÁNÍ NA MOBILU */
+    overflow-x: hidden; 
+  }
   body{
     font-family:Inter, "Segoe UI", Tahoma, sans-serif;
     background: linear-gradient(180deg,var(--bg), #eef2ff);
@@ -131,8 +134,8 @@
   .exports{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
   .exports button{ padding:10px 12px; border-radius:10px; border:0; cursor:pointer; background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; font-weight:700; }
   .exports .alt{ background:linear-gradient(90deg,#111827,#3f3f46); }
-  .exports .docx{ background:linear-gradient(90deg,#6b21a8,#a78bfa); }
   .exports .mail{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+  /* Ostatní exporty jsou odstraněny v HTML */
 
   /* stars */
   .stars{ display:inline-flex; gap:6px; align-items:center; }
@@ -173,7 +176,7 @@
   <div style="display:flex;align-items:center;gap:12px;justify-content:space-between;width:100%">
     <div class="title">
       <h1><i class="fa fa-broom" style="color:var(--accent)"></i> Rozpis služeb - Obořiště</h1>
-      <div class="sub muted">Aplikace Vytvořena od A.Horvath</div>
+      <div class="sub muted">Plánovač směn kuchyně — moderně a přehledně</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <div id="todayShort" class="muted"></div>
@@ -251,11 +254,8 @@
       <div class="exports" style="justify-content:space-between">
         <div style="display:flex;gap:8px">
           <button class="mail" onclick="sendEmail()"><i class="fa fa-envelope"></i> Odeslat emailem</button>
-          <button class="alt" onclick="exportPNG(true)"><i class="fa fa-file-image"></i> PNG (čistě)</button>
-          <button onclick="exportJPG()"><i class="fa fa-image"></i> JPG</button>
-          <button onclick="exportPDF()"><i class="fa fa-file-pdf"></i> PDF</button>
-          <button class="docx" onclick="exportDOCX()"><i class="fa fa-file-word"></i> DOCX</button>
-        </div>
+          <button class="alt" onclick="exportPNG(true)"><i class="fa fa-file-image"></i> Export PNG</button>
+          </div>
 
         <div style="display:flex;gap:8px;align-items:center">
           <div class="muted">Řadit podle:</div>
@@ -716,39 +716,7 @@ async function exportPNG(clean=false){
   const link = document.createElement('a'); link.download = 'rozpis.png'; link.href = canvas.toDataURL('image/png'); link.click();
 }
 
-async function exportJPG(){
-  const node = document.getElementById('scheduleCard');
-  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
-  const link = document.createElement('a'); link.download = 'rozpis.jpg'; link.href = canvas.toDataURL('image/jpeg', 0.92); link.click();
-}
-
-async function exportPDF(){
-  const { jsPDF } = window.jspdf;
-  const node = document.getElementById('scheduleCard');
-  const canvas = await html2canvas(node, {backgroundColor:'#ffffff', scale:2});
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({
-    orientation: (canvas.width > canvas.height) ? 'landscape' : 'portrait',
-    unit: 'px',
-    format: [canvas.width, canvas.height]
-  });
-  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-  pdf.save('rozpis.pdf');
-}
-
-function exportDOCX(){
-  let html = '<!doctype html><html><head><meta charset="utf-8"><title>Rozpis</title></head><body>';
-  html += '<h2>Rozpis služeb - Obořiště</h2>';
-  html += '<table border="1" cellpadding="6" style="border-collapse:collapse">';
-  html += '<thead><tr><th>Od</th><th>Do</th><th>Žák</th><th>Hodnocení</th><th>Poznámka</th></tr></thead><tbody>';
-  currentAssignments.forEach(r=>{
-    const rating = store.ratings[r.student] || 0;
-    html += `<tr><td>${formatDate(r.start)}</td><td>${formatDate(r.end)}</td><td>${escapeHtml(r.student)}</td><td>${rating} / 5</td><td>${escapeHtml(r.note||'')}</td></tr>`;
-  });
-  html += '</tbody></table></body></html>';
-  const blob = new Blob([html], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8'});
-  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'rozpis.docx'; link.click();
-}
+// ODSTRANĚNY FUNKCE exportJPG, exportPDF, exportDOCX
 
 // Point 4: Send email
 function sendEmail(){
