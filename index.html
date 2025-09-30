@@ -137,6 +137,8 @@
   .exports button{ padding:10px 12px; border-radius:10px; border:0; cursor:pointer; background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; font-weight:700; }
   .exports .alt{ background:linear-gradient(90deg,#111827,#3f3f46); }
   .exports .mail{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+  .exports .secondary{ background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:700; } /* Stylování pro Import */
+
 
   /* stars */
   .stars{ display:inline-flex; gap:6px; align-items:center; }
@@ -323,11 +325,14 @@
 
     <div class="card">
       <h2><i class="fa fa-database"></i> Správa dat</h2>
-      <p class="muted">Data se ukládají do prohlížeče (localStorage). Zde můžeš exportovat všechna data jako JSON nebo vše smazat.</p>
+      <p class="muted">Data se ukládají do prohlížeče (localStorage). Zde můžeš exportovat všechna data jako JSON, nahrát je zpět, nebo vše smazat.</p>
 
-      <div style="margin-top:10px;display:flex;gap:8px">
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="exportAllJSON()"><i class="fa fa-download"></i> Exportovat data (JSON)</button>
-        <button class="btn secondary" onclick="clearAll()"><i class="fa fa-trash"></i> Vymazat data</button>
+        
+        <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="importAllJSON(event)">
+        <button class="btn secondary" onclick="document.getElementById('importJsonFile').click()"><i class="fa fa-upload"></i> Nahrát JSON data</button>
+        <button class="btn danger" onclick="clearAll()"><i class="fa fa-trash"></i> Vymazat data</button>
       </div>
     </div>
   </section>
@@ -949,6 +954,37 @@ function exportAllJSON(){
   };
   const blob = new Blob([JSON.stringify(dataToExport,null,2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uklid_data.json'; a.click();
+}
+
+function importAllJSON(event){
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if(!confirm('Opravdu nahrát data z JSON souboru? Stávající data budou PŘEPSÁNA.')) {
+        event.target.value = ''; // Reset file input
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+        try{
+            const data = JSON.parse(e.target.result);
+            if(data.students && data.ratings && data.vacation){
+                store.students = data.students;
+                store.ratings = data.ratings;
+                store.vacation = data.vacation;
+                saveStore();
+                redrawAll();
+                alert('Data byla úspěšně nahrána a uložena.');
+            } else {
+                alert('Chyba: JSON soubor neobsahuje potřebná data (students, ratings, vacation).');
+            }
+        } catch(err){
+            alert('Chyba při zpracování JSON souboru: ' + err.message);
+        }
+        event.target.value = ''; // Reset file input
+    };
+    reader.readAsText(file);
 }
 
 /* redraw / orchestrace */
