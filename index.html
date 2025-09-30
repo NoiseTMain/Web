@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Úklid kuchyně - Výchovný ústav Obořiště</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * {box-sizing: border-box; margin:0; padding:0;}
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f3f4f6; color:#111827; }
+  header { text-align:center; background:#2563eb; color:white; padding:25px; font-size:1.7em; font-weight:bold; }
+  .container { max-width: 1000px; margin:auto; padding:20px; }
+  .card { background:white; border-radius:15px; box-shadow:0 6px 15px rgba(0,0,0,0.1); padding:25px; margin-bottom:25px; transition: all 0.3s ease; opacity:0; transform: translateY(20px); animation: fadeInUp 0.5s forwards; }
+  @keyframes fadeInUp { to { opacity:1; transform: translateY(0); } }
+  h2 { margin-bottom:15px; color:#1f2937; }
+  input[type=text] { width:70%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-right:10px; font-size:1em; }
+  button { padding:8px 15px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1em; transition:0.2s; }
+  button.add { background:#10b981; color:white; }
+  button.add:hover { background:#059669; }
+  button.delete { background:#ef4444; color:white; margin-left:10px; }
+  button.delete:hover { background:#dc2626; }
+  button.export { background:#2563eb; color:white; width:100%; margin-top:20px; font-size:1.1em; padding:12px; }
+  button.export:hover { background:#1e40af; }
+  table { width:100%; border-collapse:collapse; margin-top:15px; font-size:1em; }
+  th, td { padding:12px; text-align:left; border-bottom:1px solid #e2e8f0; }
+  th { background:#2563eb; color:white; border-radius:6px; }
+  tr:hover { background:#f1f5f9; }
+  .today { background:#fde68a; }
+  .date-display { text-align:right; margin-bottom:10px; color:#374151; font-weight:bold; }
+  .highlight { color:#2563eb; font-weight:bold; }
+  @media(max-width:700px){ input[type=text]{width:60%;} table, th, td{font-size:0.85em;} }
+</style>
+</head>
+<body>
+<header>Úklid kuchyně - Výchovný ústav Obořiště</header>
+<div class="container">
+  <div class="date-display" id="currentDate"></div>
+
+  <div class="card">
+    <h2>Přidat žáka</h2>
+    <input type="text" id="newStudent" placeholder="Jméno žáka">
+    <button class="add" onclick="addStudent()">Přidat</button>
+  </div>
+
+  <div class="card">
+    <h2>Seznam žáků</h2>
+    <ul id="studentList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Rozpis směn (tabulka)</h2>
+    <table>
+      <thead>
+        <tr><th>Od (datum)</th><th>Do (datum)</th><th>Žák</th></tr>
+      </thead>
+      <tbody id="scheduleTable"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Další statistiky a informace</h2>
+    <p>Počet žáků: <span id="studentCount" class="highlight"></span></p>
+  </div>
+
+  <button class="export" onclick="exportPDF()">Exportovat PDF</button>
+</div>
+
+<script>
+let students=[];
+const weeksPerMonth=4;
+
+function updateCurrentDate(){
+  const now=new Date();
+  const options={weekday:'long', year:'numeric', month:'long', day:'numeric'};
+  document.getElementById('currentDate').textContent='Dnes: '+now.toLocaleDateString('cs-CZ',options);
+}
+
+function saveStudents(){ localStorage.setItem('students',JSON.stringify(students)); }
+function loadStudents(){ const data=localStorage.getItem('students'); if(data) students=JSON.parse(data); }
+
+function renderStudents(){
+  const list=document.getElementById('studentList'); list.innerHTML='';
+  students.forEach((s,i)=>{
+    const li=document.createElement('li'); li.style.marginBottom='8px';
+    li.textContent=s;
+    const del=document.createElement('button'); del.className='delete'; del.innerHTML='<i class="fa fa-trash"></i>';
+    del.onclick=()=>{students.splice(i,1); saveStudents(); renderStudents(); renderSchedule();};
+    li.appendChild(del); list.appendChild(li);
+  });
+  document.getElementById('studentCount').textContent=students.length;
+}
+
+function addStudent(){
+  const name=document.getElementById('newStudent').value.trim();
+  if(name){students.push(name); document.getElementById('newStudent').value=''; saveStudents(); renderStudents(); renderSchedule();}
+}
+
+function renderSchedule(){
+  const tbody=document.getElementById('scheduleTable'); tbody.innerHTML='';
+  if(students.length===0) return;
+  const totalWeeks=Math.max(weeksPerMonth, students.length);
+  const today=new Date();
+  for(let w=0; w<totalWeeks; w++){
+    const startDate=new Date(today.getFullYear(), today.getMonth(), today.getDate()+w*7);
+    const endDate=new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()+6);
+    const tr=document.createElement('tr');
+    const tdStart=document.createElement('td'); tdStart.textContent=startDate.toLocaleDateString();
+    const tdEnd=document.createElement('td'); tdEnd.textContent=endDate.toLocaleDateString();
+    const tdStudent=document.createElement('td'); tdStudent.textContent=students[w%students.length];
+    // Zvýraznění aktuálního týdne
+    const now=new Date();
+    if(now>=startDate && now<=endDate){ tdStart.classList.add('today'); tdEnd.classList.add('today'); tdStudent.classList.add('today'); }
+    tr.appendChild(tdStart); tr.appendChild(tdEnd); tr.appendChild(tdStudent); tbody.appendChild(tr);
+  }
+}
+
+function exportPDF(){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF();
+  doc.setFontSize(16); doc.text('Rozpis úklidu - Výchovný ústav Obořiště',10,20);
+  const totalWeeks=Math.max(weeksPerMonth, students.length);
+  const today=new Date();
+  for(let w=0; w<totalWeeks; w++){
+    const startDate=new Date(today.getFullYear(), today.getMonth(), today.getDate()+w*7);
+    const endDate=new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()+6);
+    const student=students[w%students.length];
+    doc.text(`${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()} → ${student}`,10,30+w*10);
+  }
+  doc.save('rozpis.pdf');
+}
+
+updateCurrentDate(); loadStudents(); renderStudents(); renderSchedule();
+</script>
+</body>
+</html>
