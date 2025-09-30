@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Úklid kuchyně - Výchovný ústav Obořiště</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 0; background: #f9fafb; color: #111827; }
+    header { text-align: center; padding: 20px; background-color: #2563eb; color: white; font-size: 1.5em; }
+    .container { padding: 20px; max-width: 600px; margin: auto; }
+    .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input[type=text] { width: 70%; padding: 5px; margin-right: 5px; }
+    button { padding: 5px 10px; margin-top: 5px; border: none; border-radius: 5px; cursor: pointer; }
+    button.add { background-color: #10b981; color: white; }
+    button.delete { background-color: #ef4444; color: white; }
+    button.export { background-color: #2563eb; color: white; width: 100%; margin-top: 10px; }
+  </style>
+</head>
+<body>
+<header>Úklid kuchyně - Výchovný ústav Obořiště</header>
+<div class="container">
+  <div class="card">
+    <h3>Přidat žáka</h3>
+    <input type="text" id="newStudent" placeholder="Jméno žáka">
+    <button class="add" onclick="addStudent()">Přidat</button>
+  </div>
+
+  <div class="card">
+    <h3>Seznam žáků</h3>
+    <ul id="studentList"></ul>
+  </div>
+
+  <div class="card">
+    <h3>Rozpis směn</h3>
+    <div id="scheduleList"></div>
+  </div>
+
+  <button class="export" onclick="exportPDF()">Exportovat PDF</button>
+</div>
+
+<script>
+let students = [];
+
+function saveStudents() {
+  localStorage.setItem('students', JSON.stringify(students));
+}
+
+function loadStudents() {
+  const data = localStorage.getItem('students');
+  if(data) students = JSON.parse(data);
+}
+
+function renderStudents() {
+  const list = document.getElementById('studentList');
+  list.innerHTML = '';
+  students.forEach((s, i) => {
+    const li = document.createElement('li');
+    li.textContent = s;
+    const del = document.createElement('button');
+    del.textContent = 'Smazat';
+    del.className = 'delete';
+    del.onclick = () => { students.splice(i,1); saveStudents(); renderStudents(); renderSchedule(); };
+    li.appendChild(del);
+    list.appendChild(li);
+  });
+}
+
+function addStudent() {
+  const name = document.getElementById('newStudent').value.trim();
+  if(name){
+    students.push(name);
+    document.getElementById('newStudent').value = '';
+    saveStudents();
+    renderStudents();
+    renderSchedule();
+  }
+}
+
+function renderSchedule() {
+  const schedule = document.getElementById('scheduleList');
+  schedule.innerHTML = '';
+  if(students.length === 0) return;
+  const today = new Date();
+  for(let week=0; week<4; week++){
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + week*7);
+    const student = students[week % students.length];
+    const div = document.createElement('div');
+    div.textContent = `Týden od ${d.toLocaleDateString()} → ${student}`;
+    schedule.appendChild(div);
+  }
+}
+
+function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('Rozpis úklidu - Výchovný ústav Obořiště', 10, 20);
+  students.forEach((s,i)=>{
+    const d = new Date();
+    d.setDate(d.getDate() + i*7);
+    doc.text(`${d.toLocaleDateString()} → ${s}`, 10, 30 + i*10);
+  });
+  doc.save('rozpis.pdf');
+}
+
+loadStudents();
+renderStudents();
+renderSchedule();
+</script>
+</body>
+</html>
