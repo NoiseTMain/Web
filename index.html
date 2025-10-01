@@ -110,6 +110,7 @@
   .btn{ display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:700; }
   .btn.secondary{ background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:700; }
   .btn.danger{ background:var(--danger); color:#fff; }
+  .btn.action-small{ padding:6px 10px; font-size:12px; } /* Pro malé akční tlačítka v tabulce nastavení prázdnin */
 
   /* student list */
   .student-list{ list-style:none; margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; padding:0; }
@@ -121,13 +122,14 @@
 
   /* table */
   .table-wrap{ overflow:auto; margin-top:8px }
-  table.main{ width:100%; border-collapse:collapse; min-width:720px; background:var(--card); border-radius:8px; overflow:hidden; }
-  table.main thead th{ text-align:left; padding:12px; background:var(--accent); color:#fff; font-weight:800; font-size:0.95em; }
-  table.main tbody td{ padding:12px; border-bottom:1px dashed rgba(0,0,0,0.06); vertical-align:middle; color:var(--text) }
-  table.main tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
+  table.main, table.settings{ width:100%; border-collapse:collapse; min-width:720px; background:var(--card); border-radius:8px; overflow:hidden; }
+  table.main thead th, table.settings thead th{ text-align:left; padding:12px; background:var(--accent); color:#fff; font-weight:800; font-size:0.95em; }
+  table.main tbody td, table.settings tbody td{ padding:12px; border-bottom:1px dashed rgba(0,0,0,0.06); vertical-align:middle; color:var(--text) }
+  table.main tr:hover td, table.settings tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
   .badge{ display:inline-block; padding:6px 8px; border-radius:8px; background:linear-gradient(90deg,var(--accent2),#34d399); color:#fff; font-weight:700; }
   .badge.danger{ background:var(--danger); }
   .badge.warning{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+  .badge.info{ background:linear-gradient(90deg,#60a5fa,#93c5fd); } /* Barva pro ředitelské volno */
 
   .muted{ color:var(--muted); font-size:0.88em; }
   .date-display{ text-align:right; margin-bottom:10px; color:var(--muted); font-weight:700; }
@@ -167,7 +169,7 @@
   @media(max-width:820px){
     .topbar{ flex-direction:column; gap:8px; align-items:stretch }
     .form-row{ flex-direction:column; align-items:stretch }
-    table.main{ min-width:600px }
+    table.main, table.settings{ min-width:600px }
   }
 </style>
 </head>
@@ -309,17 +311,30 @@
 
   <section id="section-settings" style="display:none">
     <div class="card">
-      <h2><i class="fas fa-border-style"></i> Nastavení prázdnin</h2>
-      <p class="muted">Nastav data prázdnin. V těchto týdnech se do rozpisu automaticky vloží poznámka "PRÁZDNINY" a rotace žáků se přeruší.</p>
+      <h2><i class="fas fa-border-style"></i> Nastavení prázdnin a ředitelského volna</h2>
+      <p class="muted">Nastav data prázdnin nebo ředitelského volna. V těchto týdnech se rotace žáků přeruší.</p>
       
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);padding:10px;border-radius:8px;background:var(--glass)">
+        <div class="muted">Typ:</div>
+        <select id="vacationType">
+          <option value="holiday">Školní prázdniny</option>
+          <option value="director">Ředitelské volno</option>
+        </select>
         <div class="muted">Od:</div>
-        <input type="date" id="vacationFrom" />
+        <input type="date" id="vacationFrom" style="flex-grow:1"/>
         <div class="muted">Do:</div>
-        <input type="date" id="vacationTo" />
-        <button class="btn secondary" onclick="saveVacationDates()"><i class="fa fa-save"></i> Uložit prázdniny</button>
-        <button class="btn danger" onclick="clearVacationDates()"><i class="fa fa-times"></i> Zrušit prázdniny</button>
-        <div id="vacationStatus" class="badge" style="background:transparent; color:var(--muted)"></div>
+        <input type="date" id="vacationTo" style="flex-grow:1"/>
+        <button class="btn" onclick="addVacationPeriod()"><i class="fa fa-plus"></i> Přidat období</button>
+      </div>
+
+      <div class="table-wrap" style="margin-top:15px">
+        <table class="settings">
+          <thead>
+            <tr><th>Od</th><th>Do</th><th>Typ</th><th>Akce</th></tr>
+          </thead>
+          <tbody id="vacationTableBody">
+            </tbody>
+        </table>
       </div>
     </div>
 
@@ -387,12 +402,12 @@
    ========================= */
 const LS_KEY = 'uklid_oboriste_v4_students';
 const LS_RATING = 'uklid_oboriste_ratings_v4';
-const LS_VACATION = 'uklid_oboriste_vacation'; // Nový klíč pro prázdniny
+const LS_VACATION = 'uklid_oboriste_vacation_periods'; // NOVÝ KLÍČ pro pole prázdnin
 
 let store = {
   students: [], // [{name, note?, status: {type, from, to}}]
   ratings: {},  // name -> rating (1..5)
-  vacation: { from: null, to: null } // {from: date_string, to: date_string}
+  vacationPeriods: [], // [{from: date_string, to: date_string, type: 'holiday'|'director'}]
 };
 
 function loadStore(){
@@ -401,10 +416,10 @@ function loadStore(){
     if(raw) store.students = JSON.parse(raw);
     const rawR = localStorage.getItem(LS_RATING);
     if(rawR) store.ratings = JSON.parse(rawR);
-    // Načtení prázdnin
+    // Načtení prázdnin - nyní jako pole
     const rawV = localStorage.getItem(LS_VACATION);
-    if(rawV) store.vacation = JSON.parse(rawV);
-    else store.vacation = { from: null, to: null };
+    if(rawV) store.vacationPeriods = JSON.parse(rawV);
+    else store.vacationPeriods = [];
   }catch(e){
     console.warn('Load error',e);
   }
@@ -412,8 +427,8 @@ function loadStore(){
 function saveStore(){
   localStorage.setItem(LS_KEY, JSON.stringify(store.students));
   localStorage.setItem(LS_RATING, JSON.stringify(store.ratings||{}));
-  // Uložení prázdnin
-  localStorage.setItem(LS_VACATION, JSON.stringify(store.vacation));
+  // Uložení prázdnin - pole
+  localStorage.setItem(LS_VACATION, JSON.stringify(store.vacationPeriods));
 }
 
 /* helpers */
@@ -422,20 +437,25 @@ function formatDate(d){ const dt = new Date(d); return dt.toLocaleDateString('cs
 function todayShort(){ const n = new Date(); $('todayShort').textContent = n.toLocaleDateString('cs-CZ'); }
 function isSameDay(d1, d2){ return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate(); }
 
-// Pomocná funkce pro kontrolu, zda týden spadá do prázdnin
-function isVacationWeek(weekStart, weekEnd){
-    if(!store.vacation.from || !store.vacation.to) return false;
-    const vFrom = new Date(store.vacation.from);
-    const vTo = new Date(store.vacation.to);
-    
-    // Přesné srovnání dat pro týden (7 dní) a prázdniny
-    const weekStartMid = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
-    const weekEndMid = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
-    const vFromMid = new Date(vFrom.getFullYear(), vFrom.getMonth(), vFrom.getDate());
-    const vToMid = new Date(vTo.getFullYear(), vTo.getMonth(), vTo.getDate());
+// Pomocná funkce pro kontrolu, zda týden spadá do PRÁZDNINOVÉHO období
+function getVacationOverlap(weekStart, weekEnd){
+    for(const period of store.vacationPeriods){
+        if(!period.from || !period.to) continue;
+        const vFrom = new Date(period.from);
+        const vTo = new Date(period.to);
+        
+        // Srovnání dat pro týden (7 dní) a prázdniny
+        const weekStartMid = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
+        const weekEndMid = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
+        const vFromMid = new Date(vFrom.getFullYear(), vFrom.getMonth(), vFrom.getDate());
+        const vToMid = new Date(vTo.getFullYear(), vTo.getMonth(), vTo.getDate());
 
-    // Kontrola překryvu: (StartA <= EndB) AND (EndA >= StartB)
-    return (weekStartMid <= vToMid) && (weekEndMid >= vFromMid);
+        // Kontrola překryvu: (StartA <= EndB) AND (EndA >= StartB)
+        if((weekStartMid <= vToMid) && (weekEndMid >= vFromMid)){
+            return { type: period.type, from: period.from, to: period.to }; // Vracíme typ a data
+        }
+    }
+    return null;
 }
 
 function isStatusActive(student, date){
@@ -676,9 +696,15 @@ function generateAssignmentsFor(startDate, weeks){
     const ed = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + 6);
     
     // **LOGIKA PRÁZDNIN**
-    if(isVacationWeek(sd, ed)){
-        // Pokud je týden prázdninový, vložíme záznam "PRÁZDNINY" a NEPŘESKOČÍME index
-        out.push({start: sd, end: ed, student: 'PRÁZDNINY', note: 'Školní prázdniny', type: 'VACATION'});
+    const vacationPeriod = getVacationOverlap(sd, ed);
+    if(vacationPeriod){
+        const type = vacationPeriod.type;
+        const note = type === 'holiday' ? 'Školní prázdniny' : 'Ředitelské volno';
+        const studentText = type === 'holiday' ? 'PRÁZDNINY' : 'VOLNO ŘEDITELE';
+        const assignedType = type === 'holiday' ? 'VACATION' : 'DIRECTOR_FREE';
+        
+        // Pokud je týden prázdninový/volno, vložíme záznam a NEPŘESKOČÍME index
+        out.push({start: sd, end: ed, student: studentText, note: note, type: assignedType});
         continue; // Pokračujeme na další týden bez rotace žáka
     }
     
@@ -727,12 +753,16 @@ function renderAssignmentsTable(assigns){
     const td4_rating = document.createElement('td');
     const td5 = document.createElement('td');
     
-    if(row.type === 'VACATION'){
-        // **Zobrazení prázdnin**
-        td3.innerHTML = `<span class="badge warning"><i class="fa fa-sun"></i> ${row.student}</span>`;
+    if(row.type === 'VACATION' || row.type === 'DIRECTOR_FREE'){
+        // **Zobrazení prázdnin/volna**
+        const isVacation = row.type === 'VACATION';
+        const badgeClass = isVacation ? 'warning' : 'info';
+        const badgeIcon = isVacation ? '<i class="fa fa-sun"></i>' : '<i class="fa fa-school-flag"></i>';
+        
+        td3.innerHTML = `<span class="badge ${badgeClass}">${badgeIcon} ${row.student}</span>`;
         td4_rating.textContent = '-';
         td5.textContent = row.note;
-        tr.style.background = 'rgba(255, 204, 0, 0.1)'; // Žluté podbarvení pro prázdniny
+        tr.style.background = isVacation ? 'rgba(255, 204, 0, 0.1)' : 'rgba(96, 165, 250, 0.1)'; // Žluté nebo modré podbarvení
     } else {
         // **Zobrazení běžné služby**
         td3.textContent = row.student;
@@ -802,7 +832,9 @@ function sendEmail(){
         const start = formatDate(r.start);
         const end = formatDate(r.end);
         let studentText = r.student;
-        if(r.type === 'VACATION') studentText = 'PRÁZDNINY'; // Zohlednění prázdnin
+        // Zohlednění prázdnin a ředitelského volna
+        if(r.type === 'VACATION') studentText = 'PRÁZDNINY'; 
+        if(r.type === 'DIRECTOR_FREE') studentText = 'VOLNO ŘEDITELE'; 
         
         const note = r.note ? ` (Pozn.: ${r.note})` : '';
         body += `Týden: ${start} - ${end}\n`;
@@ -838,8 +870,8 @@ function computeStats(){
   
   const counts = {};
   assigns.forEach(a=>{
-    // Only count assignments that start or end within the filter range AND are not VACATION
-    if(new Date(a.start) >= f && new Date(a.start) <= t && a.type !== 'VACATION'){
+    // Only count assignments that start or end within the filter range AND are not a free day
+    if(new Date(a.start) >= f && new Date(a.start) <= t && a.type === 'ASSIGNMENT'){
       counts[a.student] = (counts[a.student]||0) + 1;
     }
   });
@@ -896,24 +928,47 @@ function shadeColor(hex, percent){
 function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 
-/* settings - VACATION */
-function updateVacationUI(){
-    const vFrom = store.vacation.from;
-    const vTo = store.vacation.to;
+/* settings - VACATION (UPRAVENO PRO VÍCE OBDOBÍ) */
+
+function renderVacationPeriods(){
+    const tbody = $('vacationTableBody');
+    tbody.innerHTML = '';
     
-    if(vFrom && vTo){
-        $('vacationFrom').value = new Date(vFrom).toISOString().slice(0,10);
-        $('vacationTo').value = new Date(vTo).toISOString().slice(0,10);
-        $('vacationStatus').className = 'badge accent';
-        $('vacationStatus').innerHTML = `<i class="fa fa-plane"></i> Aktivní: ${formatDate(vFrom)} – ${formatDate(vTo)}`;
-    } else {
-        $('vacationFrom').value = '';
-        $('vacationTo').value = '';
-        $('vacationStatus').className = 'badge muted';
-        $('vacationStatus').textContent = 'Prázdniny nenastaveny';
+    // Seřazení podle data "Od"
+    const sortedPeriods = [...store.vacationPeriods].sort((a, b) => new Date(a.from) - new Date(b.from));
+
+    if(sortedPeriods.length === 0){
+        tbody.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;">Žádné prázdniny ani volno není nastaveno.</td></tr>';
+        return;
     }
+
+    sortedPeriods.forEach((period, index) => {
+        const tr = document.createElement('tr');
+        
+        const typeText = period.type === 'holiday' ? 'Školní prázdniny' : 'Ředitelské volno';
+        const typeBadgeClass = period.type === 'holiday' ? 'warning' : 'info';
+        
+        const td1 = document.createElement('td'); td1.textContent = formatDate(period.from);
+        const td2 = document.createElement('td'); td2.textContent = formatDate(period.to);
+        const td3 = document.createElement('td'); td3.innerHTML = `<span class="badge ${typeBadgeClass}">${typeText}</span>`;
+        
+        const td4 = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn danger action-small';
+        deleteBtn.innerHTML = '<i class="fa fa-trash"></i> Smazat';
+        deleteBtn.onclick = () => deleteVacationPeriod(period.from, period.to, period.type);
+        td4.appendChild(deleteBtn);
+        
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tbody.appendChild(tr);
+    });
 }
-function saveVacationDates(){
+
+function addVacationPeriod(){
+    const type = $('vacationType').value;
     const from = $('vacationFrom').value;
     const to = $('vacationTo').value;
 
@@ -925,16 +980,30 @@ function saveVacationDates(){
         alert('Datum "Od" musí být dříve než datum "Do".');
         return;
     }
+    
+    // Kontrola duplicity (pro jednoduchost kontrolujeme shodu data a typu)
+    if(store.vacationPeriods.some(p => p.from === from && p.to === to && p.type === type)){
+        alert('Toto prázdninové období je již přidáno.');
+        return;
+    }
 
-    store.vacation = { from, to };
+    store.vacationPeriods.push({ from, to, type });
     saveStore();
-    updateVacationUI();
+    renderVacationPeriods();
     generateNow(); // Přegeneruje rozpis s novými prázdninami
+    
+    // Vyčištění formuláře
+    $('vacationFrom').value = '';
+    $('vacationTo').value = '';
 }
-function clearVacationDates(){
-    store.vacation = { from: null, to: null };
+
+function deleteVacationPeriod(from, to, type){
+    if(!confirm(`Opravdu smazat volno ${formatDate(from)} - ${formatDate(to)} (${type === 'holiday' ? 'Prázdniny' : 'Ředitelské volno'})?`)) return;
+    
+    // Filtrace a smazání daného období (podle from, to a type)
+    store.vacationPeriods = store.vacationPeriods.filter(p => !(p.from === from && p.to === to && p.type === type));
     saveStore();
-    updateVacationUI();
+    renderVacationPeriods();
     generateNow(); // Přegeneruje rozpis
 }
 
@@ -943,14 +1012,14 @@ function clearVacationDates(){
 function clearAll(){
   if(!confirm('Opravdu vymazat všechna data?')) return;
   localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_RATING); localStorage.removeItem(LS_VACATION);
-  store = {students:[], ratings:{}, vacation: { from: null, to: null }};
+  store = {students:[], ratings:{}, vacationPeriods: []};
   redrawAll();
 }
 function exportAllJSON(){
   const dataToExport = {
       students: store.students,
       ratings: store.ratings,
-      vacation: store.vacation,
+      vacationPeriods: store.vacationPeriods, // Změněný název pole
   };
   const blob = new Blob([JSON.stringify(dataToExport,null,2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'uklid_data.json'; a.click();
@@ -969,15 +1038,18 @@ function importAllJSON(event){
     reader.onload = function(e){
         try{
             const data = JSON.parse(e.target.result);
-            if(data.students && data.ratings && data.vacation){
+            // Kontrolujeme jak starý, tak nový klíč, kvůli zpětné kompatibilitě (pouze pro data, ne pro logiku)
+            const importedVacation = data.vacationPeriods || (data.vacation ? [data.vacation].filter(v => v.from && v.to).map(v => ({...v, type:'holiday'})) : []);
+            
+            if(data.students && data.ratings && Array.isArray(importedVacation)){
                 store.students = data.students;
                 store.ratings = data.ratings;
-                store.vacation = data.vacation;
+                store.vacationPeriods = importedVacation;
                 saveStore();
                 redrawAll();
                 alert('Data byla úspěšně nahrána a uložena.');
             } else {
-                alert('Chyba: JSON soubor neobsahuje potřebná data (students, ratings, vacation).');
+                alert('Chyba: JSON soubor neobsahuje potřebná data nebo má chybný formát.');
             }
         } catch(err){
             alert('Chyba při zpracování JSON souboru: ' + err.message);
@@ -993,9 +1065,9 @@ function redrawAll(){
   todayShort();
   if(!store.students) store.students = [];
   if(!store.ratings) store.ratings = {};
-  if(!store.vacation) store.vacation = { from: null, to: null }; // zajištění struktury
+  if(!store.vacationPeriods) store.vacationPeriods = []; // zajištění struktury
   renderStudentsList();
-  updateVacationUI(); // Aktualizace UI prázdnin
+  renderVacationPeriods(); // Aktualizace UI prázdnin
   
   // set defaults for date inputs if empty
   const now = new Date();
@@ -1145,7 +1217,7 @@ window.addEventListener('mousemove',(e)=>{
   loadStore();
   if(!store.students) store.students = [];
   if(!store.ratings) store.ratings = {};
-  if(!store.vacation) store.vacation = { from: null, to: null }; // Opraveno, aby se inicializovalo
+  if(!store.vacationPeriods) store.vacationPeriods = []; // Opraveno, aby se inicializovalo
   todayShort();
   redrawAll();
   
