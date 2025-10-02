@@ -77,11 +77,32 @@
     border-image: url('https://www.transparenttextures.com/patterns/marble.png') 30 repeat;
     color: var(--text);
   }
+  [data-theme='dark'] header{
+    border-image: url('https://www.transparenttextures.com/patterns/black-linen-2.png') 30 repeat;
+    border-bottom: 14px solid rgba(30, 30, 30, 0.9);
+  }
   .title{ display:flex; flex-direction:column; z-index:5; }
   .title h1{ font-size:20px; margin-bottom:4px; }
   .title .sub{ font-size:12px; color:var(--muted) }
 
-  .wrap{max-width:1100px;margin:16px auto;padding:0 18px; position:relative; z-index:5}
+  .wrap{
+    max-width:1100px;
+    margin:16px auto;
+    padding:0 18px; 
+    position:relative; 
+    z-index:5;
+    /* NOVÁ ÚPRAVA PRO TMAVÝ REŽIM */
+    transition: background 0.25s;
+  }
+  [data-theme='dark'] .wrap{
+      background: rgba(40, 44, 52, 0.2); /* Tmavší, průhledné pozadí pro obsah */
+      border-radius: 12px;
+      padding-top: 18px;
+      padding-bottom: 18px;
+      margin-top: 0;
+      backdrop-filter: blur(2px);
+  }
+
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
   .controls{display:flex;gap:8px;align-items:center}
 
@@ -139,7 +160,9 @@
   table.main, table.settings{ width:100%; border-collapse:collapse; min-width:720px; background:var(--card); border-radius:8px; overflow:hidden; }
   table.main thead th, table.settings thead th{ text-align:left; padding:12px; background:var(--accent); color:#fff; font-weight:800; font-size:0.95em; }
   table.main tbody td, table.settings tbody td{ padding:12px; border-bottom:1px dashed rgba(0,0,0,0.06); vertical-align:middle; color:var(--text) }
+  [data-theme='dark'] table.main tbody td, [data-theme='dark'] table.settings tbody td{ border-bottom:1px dashed rgba(255,255,255,0.08); }
   table.main tr:hover td, table.settings tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
+  [data-theme='dark'] table.main tr:hover td, [data-theme='dark'] table.settings tr:hover td{ background:linear-gradient(90deg, rgba(255,255,255,0.03), transparent); }
   .badge{ display:inline-block; padding:6px 8px; border-radius:8px; background:linear-gradient(90deg,var(--accent2),#34d399); color:#fff; font-weight:700; }
   .badge.danger{ background:var(--danger); }
   .badge.warning{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
@@ -160,9 +183,11 @@
   .stars{ display:inline-flex; gap:6px; align-items:center; }
   .star{ cursor:pointer; color:#ffd66b; font-size:1.05em }
   .star.inactive{ color:#cbd5e1 }
+  [data-theme='dark'] .star.inactive{ color:#4b5563 }
 
   .stat-list{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px; }
   .stat-card{ padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.6), transparent); border:1px solid var(--border) }
+  [data-theme='dark'] .stat-card{ background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent); }
 
   /* MODAL */
   .modal-overlay{
@@ -184,6 +209,7 @@
     .topbar{ flex-direction:column; gap:8px; align-items:stretch }
     .form-row{ flex-direction:column; align-items:stretch }
     table.main, table.settings{ min-width:600px }
+    [data-theme='dark'] .wrap{ margin-top:16px; padding-left:18px; padding-right:18px; }
   }
 </style>
 </head>
@@ -562,7 +588,6 @@ function showSection(e){
 
 /* students list UI (used in multiple sections) */
 function renderStudentsList(){
-  // ... (kód renderStudentsList zůstává stejný)
   // build student list
   const listContainer = document.createElement('div');
   listContainer.className = 'student-list';
@@ -623,7 +648,6 @@ function renderStudentsList(){
 /* student profile modal */
 let currentStudent = null;
 function openStudentModal(name){
-    // ... (kód openStudentModal zůstává stejný)
     currentStudent = store.students.find(s => s.name === name);
     if(!currentStudent) return;
 
@@ -654,7 +678,6 @@ function closeModal(id = 'studentModal'){
     if(id === 'vacationModal') currentVacation = null;
 }
 function saveStudentProfile(){
-    // ... (kód saveStudentProfile zůstává stejný)
     if(!currentStudent) return;
     
     currentStudent.note = $('modalNote').value.trim();
@@ -674,7 +697,6 @@ function saveStudentProfile(){
     redrawAll();
 }
 function deleteStudent(name){
-    // ... (kód deleteStudent zůstává stejný)
     if(!confirm(`Opravdu smazat žáka ${name}? Tuto akci nelze vrátit.`)) return;
     store.students = store.students.filter(s => s.name !== name);
     delete store.ratings[name];
@@ -685,14 +707,12 @@ function deleteStudent(name){
 
 /* ratings */
 function setRating(name, value){
-    // ... (kód setRating zůstává stejný)
     store.ratings[name] = value;
     saveStore();
     renderStudentsList(); // update all
     renderAssignmentsTable(currentAssignments); // update stars in table
 }
 function renderRatings(){
-  // ... (kód renderRatings zůstává stejný)
   const sort = $('ratingSort') ? $('ratingSort').value : 'default';
   let arr = [...store.students];
   if(sort === 'rating_desc') arr.sort((a,b)=>(store.ratings[b.name]||0)-(store.ratings[a.name]||0));
@@ -815,6 +835,10 @@ function renderAssignmentsTable(assigns){
     
     const isCurrentWeek = now >= row.start && now <= row.end;
     if(isCurrentWeek){ tr.style.background = 'rgba(25, 99, 235, 0.1)'; }
+    // Přidáno pro tmavý režim (aby se barva přizpůsobila)
+    if(isCurrentWeek && document.body.getAttribute('data-theme') === 'dark'){
+        tr.style.background = 'rgba(25, 99, 235, 0.2)';
+    }
 
     const td1 = document.createElement('td'); td1.textContent = formatDate(row.start);
     const td2 = document.createElement('td'); td2.textContent = formatDate(row.end);
@@ -835,7 +859,13 @@ function renderAssignmentsTable(assigns){
         // Zde ukážeme poznámku z profilu prázdnin, ale pole pro editaci už nemáme
         td5.textContent = row.vacationPeriod.note || row.note; 
 
-        tr.style.background = isVacation ? 'rgba(255, 204, 0, 0.1)' : 'rgba(96, 165, 250, 0.1)'; // Žluté nebo modré podbarvení
+        // Žluté nebo modré podbarvení
+        if (document.body.getAttribute('data-theme') === 'dark') {
+            tr.style.background = isVacation ? 'rgba(245, 158, 11, 0.2)' : 'rgba(96, 165, 250, 0.2)';
+        } else {
+            tr.style.background = isVacation ? 'rgba(255, 204, 0, 0.1)' : 'rgba(96, 165, 250, 0.1)'; 
+        }
+        
     } else {
         // **Zobrazení běžné služby**
         td3.textContent = row.student;
@@ -870,7 +900,6 @@ function renderAssignmentsTable(assigns){
 
 /* exports */
 async function exportPNG(clean=false){
-  // ... (kód exportPNG zůstává stejný)
   const node = document.getElementById('scheduleCard');
   const clone = node.cloneNode(true);
   clone.style.position='fixed'; clone.style.left='200%'; clone.style.top='0'; clone.style.padding='24px'; clone.style.background='#ffffff'; clone.style.color='#111827';
@@ -898,7 +927,6 @@ async function exportPNG(clean=false){
 
 // Point 4: Send email
 function sendEmail(){
-    // ... (kód sendEmail zůstává stejný)
     let body = 'Dobrý den,\n\nzasílám rozpis služeb:\n\n';
     body += '==================================================\n';
     body += 'Rozpis služeb - Obořiště \n';
@@ -925,7 +953,6 @@ function sendEmail(){
 
 /* sorting */
 function applySort(){
-    // ... (kód applySort zůstává stejný)
   const sel = $('sortSelect').value;
   if(!currentAssignments || currentAssignments.length===0) return;
   let arr = [...currentAssignments];
@@ -937,7 +964,6 @@ function applySort(){
 
 /* stats */
 function computeStats(){
-    // ... (kód computeStats zůstává stejný)
   const f = $('statFrom').value ? new Date($('statFrom').value) : null;
   const t = $('statTo').value ? new Date($('statTo').value) : null;
   if(!f || !t){ alert('Vyber prosím obě data (od i do).'); return; }
@@ -965,7 +991,6 @@ function computeStats(){
 
 /* filters generate */
 function applyFilter(){
-    // ... (kód applyFilter zůstává stejný)
   const f = $('filterFrom').value ? new Date($('filterFrom').value) : new Date();
   const t = $('filterTo').value ? new Date($('filterTo').value) : new Date(f.getFullYear(), f.getMonth(), f.getDate() + 28);
   const weeks = Math.max(1, Math.ceil((t - f)/(7*24*60*60*1000)) + 1); // +1 week safety margin
@@ -981,7 +1006,6 @@ function applyFilter(){
 
 /* generate now */
 function generateNow(){
-    // ... (kód generateNow zůstává stejný)
   const from = $('genFrom').value ? new Date($('genFrom').value) : new Date();
   let weeks = parseInt($('genWeeks').value,10) || 4;
   // if more students than weeks, extend weeks so every student gets at least one turn
@@ -992,13 +1016,11 @@ function generateNow(){
 
 /* utilities */
 function pickColor(seed){
-    // ... (kód pickColor zůstává stejný)
   const colors = ['#f97316','#ef4444','#f59e0b','#10b981','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
   let s=0; for(let i=0;i<seed.length;i++) s += seed.charCodeAt(i);
   return colors[s % colors.length];
 }
 function shadeColor(hex, percent){
-    // ... (kód shadeColor zůstává stejný)
   const col = hex.replace('#','');
   const num = parseInt(col,16);
   let r = (num >> 16) + Math.round(255 * percent / 100);
@@ -1008,7 +1030,6 @@ function shadeColor(hex, percent){
   return '#' + ( (1<<24) + (r<<16) + (g<<8) + b ).toString(16).slice(1);
 }
 function escapeHtml(s){ 
-    // ... (kód escapeHtml zůstává stejný)
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
 }
 
@@ -1183,14 +1204,12 @@ function deleteVacationPeriod(period){
 
 /* settings - DATA */
 function clearAll(){
-    // ... (kód clearAll zůstává stejný)
   if(!confirm('Opravdu vymazat všechna data?')) return;
   localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_RATING); localStorage.removeItem(LS_VACATION);
   store = {students:[], ratings:{}, vacationPeriods: []};
   redrawAll();
 }
 function exportAllJSON(){
-    // ... (kód exportAllJSON zůstává stejný)
   const dataToExport = {
       students: store.students,
       ratings: store.ratings,
@@ -1201,7 +1220,6 @@ function exportAllJSON(){
 }
 
 function importAllJSON(event){
-    // ... (kód importAllJSON zůstává stejný)
     const file = event.target.files[0];
     if (!file) return;
 
@@ -1237,7 +1255,6 @@ function importAllJSON(event){
 
 /* redraw / orchestrace */
 function redrawAll(){
-    // ... (kód redrawAll zůstává stejný)
   loadStore();
   todayShort();
   if(!store.students) store.students = [];
@@ -1264,7 +1281,6 @@ function redrawAll(){
 
 /* add student */
 function addStudent(){
-    // ... (kód addStudent zůstává stejný)
   const val = $('newStudent').value.trim();
   if(!val) return alert('Zadej jméno žáka.');
   // prevent duplicates
@@ -1411,3 +1427,4 @@ window.addEventListener('mousemove',(e)=>{
 
 </body>
 </html>
+
