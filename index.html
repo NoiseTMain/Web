@@ -21,10 +21,11 @@
     --danger: #ef4444;
   }
   [data-theme='dark']{
-    --bg: #05060a;
-    --card: rgba(20,25,30,0.6);
+    /* Změněná barva pozadí pro dark mode */
+    --bg: #241652; /* Nová skleněná barva #241652 */
+    --card: rgba(255, 255, 255, 0.08); /* Světlejší průhledná karta pro lepší kontrast na tmavém pozadí */
     --muted: #bfc8d2;
-    --accent: #1e40af;
+    --accent: #a5b4fc; /* Světlejší modrá pro lepší čitelnost */
     --accent2: #047857;
     --glass: rgba(255,255,255,0.02);
     --border: rgba(255,255,255,0.06);
@@ -35,11 +36,12 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{
     height:100%;
-    /* ZAKÁZÁNÍ SCROLLOVÁNÍ NA MOBILU (ponecháno z originálu, ale ovlivňuje paralaxu) */
-    /* overflow-x: hidden; */
+    /* ZAKÁZÁNÍ SCROLLOVÁNÍ NA MOBILU */
+    overflow-x: hidden; 
   }
   body{
     font-family:Inter, "Segoe UI", Tahoma, sans-serif;
+    /* Upravené pozadí pro světlý režim */
     background: linear-gradient(180deg,var(--bg), #eef2ff);
     color: var(--text);
     padding-bottom:40px;
@@ -49,9 +51,9 @@
     /* PŘIDÁNO: Zakázání horizontálního scrollování */
     touch-action: pan-y;
   }
+  /* Upravené pozadí pro tmavý režim na novou barvu #241652 s gradientem pro "skleněný" pocit */
   [data-theme='dark'] body{ 
-    /* Odstraněno radiální pozadí, bude překryto plátnem hvězd */
-    background: #04050a; 
+    background: radial-gradient(circle at 10% 10%, #3d2382 0%, #241652 100%); 
   }
 
   /* starfield canvas sits behind content in dark mode */
@@ -83,6 +85,7 @@
   [data-theme='dark'] header{
     border-image: url('https://www.transparenttextures.com/patterns/black-linen-2.png') 30 repeat;
     border-bottom: 14px solid rgba(30, 30, 30, 0.9);
+    background: rgba(0, 0, 0, 0.2); /* Průhlednější pro tmavé pozadí */
   }
   .title{ display:flex; flex-direction:column; z-index:5; }
   .title h1{ font-size:20px; margin-bottom:4px; }
@@ -216,7 +219,7 @@
   }
 </style>
 </head>
-<body data-theme="light">
+<body data-theme="dark">
 
 <canvas id="starfield"></canvas>
 
@@ -228,7 +231,7 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <div id="todayShort" class="muted"></div>
-      <button class="btn secondary" onclick="toggleTheme()" id="themeBtn"><i class="fa fa-moon"></i> Přepnout motiv</button>
+      <button class="btn secondary" onclick="toggleTheme()" id="themeBtn"><i class="fa fa-sun"></i> Přepnout motiv</button>
     </div>
   </div>
 </header>
@@ -961,7 +964,7 @@ function applySort(){
   let arr = [...currentAssignments];
   if(sel==='date'){ arr.sort((a,b)=> new Date(a.start) - new Date(b.start)); }
   if(sel==='student_asc'){ arr.sort((a,b)=> a.student.localeCompare(b.student,'cs')); }
-  if(sel==='student_desc'){ arr.sort((a,b)=> b.student.localeCompare(b.student,'cs')); }
+  if(sel==='student_desc'){ arr.sort((a,b)=> b.student.localeCompare(a.student,'cs')); }
   renderAssignmentsTable(arr);
 }
 
@@ -1295,98 +1298,58 @@ function addStudent(){
 }
 
 
-/* theme & starfield animation (ZDE ZAČÍNÁ NOVÁ LOGIKA PRO POHYBLIVOU GALAXII) */
+/* theme & starfield animation (rest of the file remains the same) */
 let starfieldCtx = null;
 let stars = [];
 let starAnimId = null;
-let mouseX = 0;
-let mouseY = 0;
 
 // Zajišťujeme přístup k devicePixelRatio
 const devicePixelRatio = window.devicePixelRatio || 1;
-const STAR_COUNT = 150; // Více hvězd pro hustší pole
-const STAR_SPEED = 0.005; // Základní rychlost pohybu
 
 function initStarfield(){
   const c = document.getElementById('starfield');
   if (!c) return; 
   
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-
-  c.width = w * devicePixelRatio;
-  c.height = h * devicePixelRatio;
-  c.style.width = w + 'px';
-  c.style.height = h + 'px';
+  c.width = window.innerWidth * devicePixelRatio;
+  c.height = window.innerHeight * devicePixelRatio;
+  c.style.width = window.innerWidth + 'px';
+  c.style.height = window.innerHeight + 'px';
   starfieldCtx = c.getContext('2d');
   starfieldCtx.scale(devicePixelRatio, devicePixelRatio);
   
   // init stars
   stars = [];
-  for(let i=0;i<STAR_COUNT;i++){
-    const depth = Math.random(); // 0 (nejblíže) až 1 (nejdále)
+  const count = Math.round(window.innerWidth / 12);
+  for(let i=0;i<count;i++){
     stars.push({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 1.5 + 0.3,
-      depth: depth,
-      // Random initial velocity for subtle background drift
-      vx: (Math.random()-0.5)*0.01 * (1-depth), 
-      vy: (Math.random()-0.5)*0.01 * (1-depth),
-      twinkle: Math.random()*2
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.2 + 0.3,
+      vx: (Math.random()-0.5)*0.02,
+      vy: (Math.random()-0.5)*0.02,
+      twinkle: Math.random()*1.5
     });
   }
 }
 
 function animateStarfield(time){
   if(!starfieldCtx) return;
-  const c = document.getElementById('starfield');
-  const w = c.clientWidth;
-  const h = c.clientHeight;
-
-  starfieldCtx.fillStyle = '#04050a'; // Tmavé pozadí pro galaxii
-  starfieldCtx.fillRect(0,0,w,h);
+  starfieldCtx.clearRect(0,0,window.innerWidth,window.innerHeight);
   starfieldCtx.globalCompositeOperation = 'lighter';
-  
-  const scrollY = window.scrollY || document.documentElement.scrollTop;
-  
-  // Centrování pro paralaxní myš
-  const centerX = w / 2;
-  const centerY = h / 2;
-
-  stars.forEach((s,i)=>{
-    // 1. Pohyb hvězd (jemný posun + blikání)
-    s.x += s.vx * (1 + Math.sin(time/1000 + s.twinkle)) * 0.1;
-    s.y += s.vy * (1 + Math.cos(time/1100 + s.twinkle)) * 0.1;
-
-    // 2. Parallax efekt na scrollování: Hvězdy se posouvají opačným směrem a pomaleji (čím hlouběji, tím pomaleji)
-    // Zde je klíčová paralaxa, kdy posun nahoru na stránce posouvá hvězdy dolů
-    const parallaxY = scrollY * STAR_SPEED * s.depth * 0.5; // Upraveno pro jemnější efekt
-
-    // 3. Parallax efekt na pohyb myši: Hvězdy se posouvají opačným směrem od myši
-    const mouseShiftX = (mouseX - centerX) * 0.05 * (1-s.depth); 
-    const mouseShiftY = (mouseY - centerY) * 0.05 * (1-s.depth); 
-
-    // Aplikace pozice s paralaxou
-    let finalX = s.x + mouseShiftX;
-    let finalY = s.y + parallaxY + mouseShiftY;
-    
-    // Zabalení hvězd do kruhu, aby se neobjevily náhle (vzhledem k myši a scrollování je to hrubý odhad)
-    if(finalX < 0) finalX += w;
-    if(finalX > w) finalX -= w;
-    if(finalY < 0) finalY += h;
-    if(finalY > h) finalY -= h;
-
-    // Kreslení hvězdy
-    const g = starfieldCtx.createRadialGradient(finalX, finalY, 0, finalX, finalY, s.r*6);
-    // Čím hlouběji (depth), tím slabší jas
-    const alpha = 0.95 * (1-s.depth*0.3); 
-    g.addColorStop(0, `rgba(255,255,255,${alpha})`);
-    g.addColorStop(0.2, `rgba(255,255,255,${alpha*0.6})`);
+  stars.forEach(s=>{
+    s.x += s.vx * (1 + Math.sin(time/1000 + s.twinkle));
+    s.y += s.vy * (1 + Math.cos(time/1100 + s.twinkle));
+    if(s.x < 0) s.x = window.innerWidth;
+    if(s.x > window.innerWidth) s.x = 0;
+    if(s.y < 0) s.y = window.innerHeight;
+    if(s.y > window.innerHeight) s.y = 0;
+    const g = starfieldCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r*6);
+    g.addColorStop(0, 'rgba(255,255,255,0.95)');
+    g.addColorStop(0.2, 'rgba(255,255,255,0.6)');
     g.addColorStop(1, 'rgba(255,255,255,0.0)');
     starfieldCtx.fillStyle = g;
     starfieldCtx.beginPath();
-    starfieldCtx.arc(finalX, finalY, s.r*3, 0, Math.PI*2);
+    starfieldCtx.arc(s.x, s.y, s.r*3, 0, Math.PI*2);
     starfieldCtx.fill();
   });
   starAnimId = requestAnimationFrame(animateStarfield);
@@ -1401,7 +1364,6 @@ function stopStarfield(){
         starAnimId = null; 
         const c = document.getElementById('starfield'); 
         if(c && starfieldCtx){ 
-            // Vymazání plátna po vypnutí
             starfieldCtx.clearRect(0,0,c.width,c.height); 
         } 
     } 
@@ -1414,12 +1376,8 @@ function toggleTheme(){
   body.setAttribute('data-theme', t);
   updateThemeButton(t);
   if(t === 'dark'){ 
-    // Při zapnutí Dark Mode aktivujeme Parallax
-    initStarfield(); // Znovu inicializujeme pro aktuální rozměry
     startStarfield(); 
-    // Přidáme posluchače pro parallax na scrollování, který již je v animaci
   } else { 
-    // Při vypnutí Light Mode zastavíme animaci
     stopStarfield(); 
   }
 }
@@ -1443,17 +1401,16 @@ window.addEventListener('resize', ()=>{
 });
 
 /* init mouse parallax for stars */
-// Aktualizujeme pozici myši
 window.addEventListener('mousemove',(e)=>{
-  mouseX = e.clientX;
-  mouseY = e.clientY;
+  if(!stars || stars.length===0 || document.body.getAttribute('data-theme') === 'light') return; 
+  const cx = e.clientX / window.innerWidth - 0.5;
+  const cy = e.clientY / window.innerHeight - 0.5;
+  stars.forEach((s,i)=>{
+    // small shift based on cursor
+    s.x += cx * 0.6 * (i%3===0 ? 0.6 : 0.2);
+    s.y += cy * 0.6 * (i%3===0 ? 0.6 : 0.2);
+  });
 });
-
-/* init scroll event (pro přesnější paralaxu, i když JS animace by měla stačit) */
-/* window.addEventListener('scroll', ()=>{
-    // Logika již v animateStarfield
-}); */
-
 
 /* init */
 (function init(){
