@@ -22,19 +22,20 @@
   }
   [data-theme='dark']{
     --bg: #05060a;
-    --card: rgba(35,45,60,0.5); /* Zvýšená průhlednost pro Liquid Glass */
+    --card: rgba(20,25,30,0.6);
     --muted: #bfc8d2;
-    --accent: #5e79ff; /* Světlejší accent v dark modu */
+    --accent: #1e40af;
     --accent2: #047857;
-    --glass: rgba(255,255,255,0.08); /* Mírně silnější odlesk */
-    --border: rgba(255,255,255,0.1);
-    --text: #fdf6e3; 
+    --glass: rgba(255,255,255,0.02);
+    --border: rgba(255,255,255,0.06);
+    --text: #fdf6e3; /* krémová barva textu v dark modu */
     --danger: #dc2626;
   }
 
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{
     height:100%;
+    /* ZAKÁZÁNÍ SCROLLOVÁNÍ NA MOBILU */
     overflow-x: hidden; 
   }
   body{
@@ -45,15 +46,12 @@
     transition:all .25s;
     position:relative;
     overflow-x:hidden;
+    /* PŘIDÁNO: Zakázání horizontálního scrollování */
     touch-action: pan-y;
   }
-  /* GALAKTICKÉ POZADÍ (DARK MODE) */
-  [data-theme='dark'] body{ 
-    /* Gradient, který dává pocit hloubky "galaxie" */
-    background: radial-gradient(circle at 10% 10%, #071028 0%, #04050a 60%); 
-  }
+  [data-theme='dark'] body{ background: radial-gradient(circle at 10% 10%, #071028 0%, #04050a 60%); }
 
-  /* Starfield (plátno pro hvězdy) */
+  /* starfield canvas sits behind content in dark mode */
   #starfield {
     position: fixed;
     left: 0; top: 0;
@@ -65,27 +63,23 @@
   }
   [data-theme='dark'] #starfield { opacity: 1; }
 
-  /* header s mramorovým okrajem */
+  /* header with marble border */
   header{
-    position: sticky; /* Zajištění, že hlavička zůstane viditelná */
-    top: 0;
-    z-index: 10; /* VYŠŠÍ Z-INDEX, aby byla nad obsahem */
-    background: var(--card); /* Použijeme barvu karty s blur efektem */
+    position: relative;
+    z-index: 5;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
     padding:20px 18px;
     display:flex;
     gap:12px;
     align-items:center;
     justify-content:space-between;
-    border-bottom:1px solid var(--border);
-    /* LIQUID GLASS EFEKT (PRO VŠECHNY PRVKY S POZADÍM) */
-    backdrop-filter: blur(12px); 
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Jemný stín */
+    border-bottom:14px solid rgba(230,230,230,0.9);
+    border-image: url('https://www.transparenttextures.com/patterns/marble.png') 30 repeat;
     color: var(--text);
   }
   [data-theme='dark'] header{
-    border-image: none;
-    border-bottom: 1px solid var(--border);
+    border-image: url('https://www.transparenttextures.com/patterns/black-linen-2.png') 30 repeat;
+    border-bottom: 14px solid rgba(30, 30, 30, 0.9);
   }
   .title{ display:flex; flex-direction:column; z-index:5; }
   .title h1{ font-size:20px; margin-bottom:4px; }
@@ -97,122 +91,129 @@
     padding:0 18px; 
     position:relative; 
     z-index:5;
+    /* NOVÁ ÚPRAVA PRO TMAVÝ REŽIM */
     transition: background 0.25s;
   }
   [data-theme='dark'] .wrap{
-      /* Provedl jsem odstranění pozadí pro wrap, aby byl vidět blur u jednotlivých karet */
-      background: transparent;
-      border-radius: 0; 
-      padding-top: 0;
-      padding-bottom: 0;
+      background: rgba(40, 44, 52, 0.2); /* Tmavší, průhledné pozadí pro obsah */
+      border-radius: 12px;
+      padding-top: 18px;
+      padding-bottom: 18px;
+      margin-top: 0;
+      backdrop-filter: blur(2px);
   }
 
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
   .controls{display:flex;gap:8px;align-items:center}
 
-  /* LIQUID GLASS STYLY PRO KARTY */
   .card{
     background:var(--card);
-    border-radius:24px; /* Větší zaoblení pro iOS pocit */
+    border-radius:12px;
     padding:18px;
-    box-shadow: 0 10px 40px rgba(15,23,42,0.15); /* Výraznější stín */
+    box-shadow: 0 8px 30px rgba(15,23,42,0.06);
     border:1px solid var(--border);
-    transition:transform .2s ease, box-shadow .2s ease, background .25s, border-radius .2s;
-    backdrop-filter: blur(12px); /* KLÍČOVÝ LIQUID GLASS EFEKT */
-    -webkit-backdrop-filter: blur(12px);
+    transition:transform .18s ease, box-shadow .18s ease, background .25s;
+    backdrop-filter: blur(6px);
   }
   .card + .card{ margin-top:14px }
-  .card:hover{ transform: translateY(-4px); box-shadow:0 18px 40px rgba(2,6,23,0.15) }
-  
-  /* nav - také jako Liquid Glass */
-  .nav{ 
-    display:flex; gap:8px; background:var(--card); 
-    padding:8px; border-radius:18px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-  .nav button{ 
-    background:transparent; border:1px solid transparent; 
-    padding:8px 12px; border-radius:14px; 
-    cursor:pointer; color:var(--muted); font-weight:700; 
-    transition: all 0.2s ease;
-  }
-  .nav button.active{ 
-    background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; 
-    border-color:transparent; 
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
-  }
+  .card:hover{ transform: translateY(-4px); box-shadow:0 18px 40px rgba(2,6,23,0.08) }
 
-  /* forms - Průhlednější pro Liquid Glass */
+  /* nav */
+  .nav{ display:flex; gap:8px; background:transparent; padding:6px; border-radius:10px; }
+  .nav button{ background:transparent; border:1px solid var(--border); padding:8px 12px; border-radius:8px; cursor:pointer; color:var(--muted); font-weight:700; }
+  .nav button.active{ background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; border-color:transparent; }
+
+  /* forms */
+  .form-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
   input[type=text], input[type=date], select, textarea{
-    padding:10px 12px; border-radius:10px; border:1px solid var(--border); min-width:150px; background:var(--glass); color:var(--text);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    padding:10px 12px; border-radius:8px; border:1px solid var(--border); min-width:150px; background:transparent; color:var(--text);
   }
+  .btn{ display:inline-flex; gap:8px; align-items:center; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; cursor:pointer; font-weight:700; }
+  .btn.secondary{ background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:700; }
+  .btn.danger{ background:var(--danger); color:#fff; }
+  .btn.action-small{ padding:6px 10px; font-size:12px; } /* Pro malé akční tlačítka v tabulce nastavení prázdnin */
+
+  /* student list */
+  .student-list{ list-style:none; margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; padding:0; }
+  .student-item{ display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; border:1px solid var(--border); background:linear-gradient(180deg,var(--glass),transparent); cursor:pointer; }
+  .student-item:hover{ background:linear-gradient(180deg, rgba(255,255,255,0.8), transparent); }
+  [data-theme='dark'] .student-item:hover{ background:linear-gradient(180deg, rgba(255,255,255,0.05), transparent); }
+  .student-item .name{ font-weight:700; color:var(--text) }
+  .student-item .meta{ margin-left:auto; display:flex; gap:8px; align-items:center }
   
-  /* student list - také jako Liquid Glass */
-  .student-item{ 
-    display:flex; align-items:center; gap:10px; padding:12px; 
-    border-radius:16px; border:1px solid var(--border); 
-    background:var(--card); 
-    cursor:pointer; 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  .student-item:hover{ background:linear-gradient(180deg, var(--glass), transparent); }
-  [data-theme='dark'] .student-item:hover{ background:linear-gradient(180deg, rgba(255,255,255,0.1), transparent); }
-  
-  /* NOVÉ: Seznam prázdnin (jako řádky/karty) - také Liquid Glass */
+  /* NOVÉ: Seznam prázdnin (jako řádky/karty) */
+  #vacationList{ display:flex; flex-direction:column; gap:8px; margin-top:15px; }
   .vacation-item{
-    display:flex; justify-content:space-between; align-items:center; gap:15px; padding:14px; 
-    border-radius:16px; border:1px solid var(--border); background:var(--card); 
+    display:flex; justify-content:space-between; align-items:center; gap:15px; padding:12px; 
+    border-radius:10px; border:1px solid var(--border); background:linear-gradient(180deg,var(--card),transparent); 
     cursor:pointer; transition:background .18s;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
   }
-  
-  /* table - pro větší skleněný pocit */
-  table.main, table.settings{ 
-    width:100%; border-collapse:collapse; min-width:720px; 
-    background:var(--card); 
-    border-radius:16px; 
-    overflow:hidden; 
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  
-  /* MODAL - také Liquid Glass */
+  .vacation-item:hover{ background:linear-gradient(180deg, rgba(255,255,255,0.8), transparent); }
+  [data-theme='dark'] .vacation-item:hover{ background:linear-gradient(180deg, rgba(255,255,255,0.05), transparent); }
+  .vacation-item .info{ display:flex; flex-direction:column; }
+  .vacation-item .title-text{ font-weight:700; }
+  .vacation-item .dates{ font-size:0.9em; color:var(--muted); }
+
+
+  /* table */
+  .table-wrap{ overflow:auto; margin-top:8px }
+  table.main, table.settings{ width:100%; border-collapse:collapse; min-width:720px; background:var(--card); border-radius:8px; overflow:hidden; }
+  table.main thead th, table.settings thead th{ text-align:left; padding:12px; background:var(--accent); color:#fff; font-weight:800; font-size:0.95em; }
+  table.main tbody td, table.settings tbody td{ padding:12px; border-bottom:1px dashed rgba(0,0,0,0.06); vertical-align:middle; color:var(--text) }
+  [data-theme='dark'] table.main tbody td, [data-theme='dark'] table.settings tbody td{ border-bottom:1px dashed rgba(255,255,255,0.08); }
+  table.main tr:hover td, table.settings tr:hover td{ background:linear-gradient(90deg, rgba(0,0,0,0.02), transparent); }
+  [data-theme='dark'] table.main tr:hover td, [data-theme='dark'] table.settings tr:hover td{ background:linear-gradient(90deg, rgba(255,255,255,0.03), transparent); }
+  .badge{ display:inline-block; padding:6px 8px; border-radius:8px; background:linear-gradient(90deg,var(--accent2),#34d399); color:#fff; font-weight:700; }
+  .badge.danger{ background:var(--danger); }
+  .badge.warning{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+  .badge.info{ background:linear-gradient(90deg,#60a5fa,#93c5fd); } /* Barva pro ředitelské volno */
+
+  .muted{ color:var(--muted); font-size:0.88em; }
+  .date-display{ text-align:right; margin-bottom:10px; color:var(--muted); font-weight:700; }
+
+  /* exports */
+  .exports{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+  .exports button{ padding:10px 12px; border-radius:10px; border:0; cursor:pointer; background:linear-gradient(90deg,var(--accent),#2b6ef6); color:#fff; font-weight:700; }
+  .exports .alt{ background:linear-gradient(90deg,#111827,#3f3f46); }
+  .exports .mail{ background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+  .exports .secondary{ background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:700; } /* Stylování pro Import */
+
+
+  /* stars */
+  .stars{ display:inline-flex; gap:6px; align-items:center; }
+  .star{ cursor:pointer; color:#ffd66b; font-size:1.05em }
+  .star.inactive{ color:#cbd5e1 }
+  [data-theme='dark'] .star.inactive{ color:#4b5563 }
+
+  .stat-list{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px; }
+  .stat-card{ padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.6), transparent); border:1px solid var(--border) }
+  [data-theme='dark'] .stat-card{ background:linear-gradient(180deg, rgba(255,255,255,0.03), transparent); }
+
+  /* MODAL */
   .modal-overlay{
-    position:fixed; left:0; top:0; width:100%; height:100%; 
-    background:rgba(0,0,0,0.4); /* Mírně světlejší overlay */
-    z-index:1000;
+    position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000;
     display:none; align-items:center; justify-content:center;
   }
   .modal-content{
-    background:var(--card); 
-    border-radius:24px; /* Větší zaoblení */
-    padding:30px; /* Větší padding */
-    max-width:500px; width:90%;
-    box-shadow:0 24px 48px rgba(0,0,0,0.5); 
-    position:relative;
-    backdrop-filter: blur(20px); /* Silný blur pro Modal */
-    -webkit-backdrop-filter: blur(20px);
+    background:var(--card); border-radius:12px; padding:24px; max-width:500px; width:90%;
+    box-shadow:0 24px 48px rgba(0,0,0,0.3); position:relative;
   }
-  
-  /* Dodatečné styly pro zvýraznění textu v tmavém režimu s blur pozadím */
-  [data-theme='dark'] table.main tr:hover td, [data-theme='dark'] table.settings tr:hover td{ 
-    background:rgba(255,255,255,0.06); /* Mírně silnější hover efekt */
-  }
+  .modal-close{ position:absolute; top:10px; right:10px; background:transparent; border:0; font-size:24px; cursor:pointer; color:var(--muted); }
+  .modal-header{ margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:10px; display:flex; align-items:center; }
+  .modal-body > div{ margin-bottom:15px; }
+  .modal-body label{ display:block; margin-bottom:5px; font-weight:700; color:var(--text); }
+  .modal-footer{ margin-top:20px; text-align:right; display:flex; justify-content:space-between; }
+  .modal-footer button{ margin-left:8px; }
 
   @media(max-width:820px){
     .topbar{ flex-direction:column; gap:8px; align-items:stretch }
     .form-row{ flex-direction:column; align-items:stretch }
     table.main, table.settings{ min-width:600px }
+    [data-theme='dark'] .wrap{ margin-top:16px; padding-left:18px; padding-right:18px; }
   }
 </style>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
 
 <canvas id="starfield"></canvas>
 
@@ -224,7 +225,7 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <div id="todayShort" class="muted"></div>
-      <button class="btn secondary" onclick="toggleTheme()" id="themeBtn"><i class="fa fa-sun"></i> Přepnout motiv</button>
+      <button class="btn secondary" onclick="toggleTheme()" id="themeBtn"><i class="fa fa-moon"></i> Přepnout motiv</button>
     </div>
   </div>
 </header>
@@ -353,7 +354,7 @@
       <h2><i class="fas fa-border-style"></i> Nastavení prázdnin a ředitelského volna</h2>
       <p class="muted">Nastav data prázdnin nebo ředitelského volna. Kliknutím na období otevřeš jeho "profil" pro úpravu.</p>
       
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);padding:10px;border-radius:12px;background:var(--glass); backdrop-filter: blur(8px)">
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);padding:10px;border-radius:8px;background:var(--glass)">
         <div class="muted">Typ:</div>
         <select id="vacationType">
           <option value="holiday">Školní prázdniny</option>
@@ -477,7 +478,8 @@ const LS_VACATION = 'uklid_oboriste_vacation_periods';
 let store = {
   students: [], 
   ratings: {},  
-  vacationPeriods: [], 
+  // Přidána 'note' do modelu prázdnin/volna
+  vacationPeriods: [], // [{from: date_string, to: date_string, type: 'holiday'|'director', note?: string}]
 };
 
 function loadStore(){
@@ -486,6 +488,7 @@ function loadStore(){
     if(raw) store.students = JSON.parse(raw);
     const rawR = localStorage.getItem(LS_RATING);
     if(rawR) store.ratings = JSON.parse(rawR);
+    // Načtení prázdnin - pole
     const rawV = localStorage.getItem(LS_VACATION);
     if(rawV) store.vacationPeriods = JSON.parse(rawV);
     else store.vacationPeriods = [];
@@ -496,6 +499,7 @@ function loadStore(){
 function saveStore(){
   localStorage.setItem(LS_KEY, JSON.stringify(store.students));
   localStorage.setItem(LS_RATING, JSON.stringify(store.ratings||{}));
+  // Uložení prázdnin - pole
   localStorage.setItem(LS_VACATION, JSON.stringify(store.vacationPeriods));
 }
 
@@ -504,13 +508,15 @@ function $(id){return document.getElementById(id)}
 function formatDate(d){ 
     if(!d) return '';
     const dt = new Date(d); 
-    if(isNaN(dt.getTime())) { 
+    // Oprava data pro lokální formát v časech, kdy datepicker vrací YYYY-MM-DD
+    if(isNaN(dt.getTime())) { // Pokud je neplatné datum
+        // Pokus o parsování jako YYYY-MM-DD
         const parts = d.split('-');
         if(parts.length === 3) {
-            const validDate = new Date(parts[0], parts[1]-1, parts[2]); 
+            const validDate = new Date(parts[0], parts[1]-1, parts[2]); // Měsíce jsou 0-indexované
             if(!isNaN(validDate.getTime())) return validDate.toLocaleDateString('cs-CZ');
         }
-        return d; 
+        return d; // Vrátí původní řetězec, pokud se nepodaří parsovat
     }
     return dt.toLocaleDateString('cs-CZ'); 
 }
@@ -521,15 +527,19 @@ function isSameDay(d1, d2){ return d1.getFullYear() === d2.getFullYear() && d1.g
 function getVacationOverlap(weekStart, weekEnd){
     for(const period of store.vacationPeriods){
         if(!period.from || !period.to) continue;
+        // Používáme Date, ale pro srovnání jen data, ne čas
         const vFrom = new Date(period.from);
         const vTo = new Date(period.to);
         
+        // Srovnání dat pro týden (7 dní) a prázdniny (nastavení času na půlnoc)
         const weekStartMid = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
         const weekEndMid = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
         const vFromMid = new Date(vFrom.getFullYear(), vFrom.getMonth(), vFrom.getDate());
         const vToMid = new Date(vTo.getFullYear(), vTo.getMonth(), vTo.getDate());
 
+        // Kontrola překryvu: (StartA <= EndB) AND (EndA >= StartB)
         if((weekStartMid <= vToMid) && (weekEndMid >= vFromMid)){
+            // Vracíme celý objekt, abychom měli i poznámku a unikátní identifikaci
             return period; 
         }
     }
@@ -540,14 +550,17 @@ function isStatusActive(student, date){
   if(!student.status || !student.status.type || !student.status.from) return false;
   const d = date || new Date();
   const from = new Date(student.status.from);
+  // Compare by date only, set time to midnight for accurate comparison
   const d_mid = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   const from_mid = new Date(from.getFullYear(), from.getMonth(), from.getDate());
 
   if(student.status.to){
     const to = new Date(student.status.to);
     const to_mid = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    // Active if date >= from AND date <= to
     return d_mid >= from_mid && d_mid <= to_mid;
   }
+  // Active if date >= from (indefinite)
   return d_mid >= from_mid;
 }
 function getStatusBadge(student){
@@ -575,6 +588,7 @@ function showSection(e){
 
 /* students list UI (used in multiple sections) */
 function renderStudentsList(){
+  // build student list
   const listContainer = document.createElement('div');
   listContainer.className = 'student-list';
   (store.students||[]).forEach((sObj, idx)=>{
@@ -603,6 +617,7 @@ function renderStudentsList(){
     item.appendChild(info);
 
     const meta = document.createElement('div'); meta.className='meta';
+    // rating stars
     const stars = document.createElement('div'); stars.className='stars';
     const r = store.ratings[sObj.name] || 0;
     for(let k=1;k<=5;k++){
@@ -616,18 +631,21 @@ function renderStudentsList(){
     listContainer.appendChild(item);
   });
 
+  // place into schedule card (under controls)
   const schedFirstCard = document.querySelector('#section-schedule .card');
   let existingList = schedFirstCard.querySelector('.student-list');
   if(existingList) existingList.replaceWith(listContainer.cloneNode(true));
   else schedFirstCard.appendChild(listContainer.cloneNode(true));
 
+  // ratings section
   $('ratingsList').innerHTML = '';
   $('ratingsList').appendChild(listContainer.cloneNode(true));
 
+  // update counters
   $('studentCount').textContent = store.students.length;
 }
 
-/* student profile modal (omitted for brevity, assume unchanged logic) */
+/* student profile modal */
 let currentStudent = null;
 function openStudentModal(name){
     currentStudent = store.students.find(s => s.name === name);
@@ -636,19 +654,24 @@ function openStudentModal(name){
     $('modalStudentName').innerHTML = `<i class="fa fa-user-edit"></i> Profil žáka: ${currentStudent.name}`;
     $('modalNote').value = currentStudent.note || '';
     
+    // Status
     const status = currentStudent.status || {};
     $('modalStatusType').value = status.type || '';
+    // Převedeme do formátu YYYY-MM-DD
     $('modalDateFrom').value = status.from ? new Date(status.from).toISOString().slice(0,10) : '';
     $('modalDateTo').value = status.to ? new Date(status.to).toISOString().slice(0,10) : '';
 
+    // Status badge
     const badge = getStatusBadge(currentStudent);
     if(badge.text) $('modalStatusBadge').innerHTML = `<span class="badge ${badge.class}">${badge.text}</span>`;
     else $('modalStatusBadge').innerHTML = '';
 
+    // Delete button
     $('modalDeleteBtn').onclick = () => deleteStudent(currentStudent.name);
 
     $('studentModal').style.display = 'flex';
 }
+// Upraveno pro oba modaly
 function closeModal(id = 'studentModal'){
     $(id).style.display = 'none';
     if(id === 'studentModal') currentStudent = null;
@@ -666,7 +689,7 @@ function saveStudentProfile(){
     if(type && from){
         currentStudent.status = {type, from, to};
     } else {
-        currentStudent.status = {}; 
+        currentStudent.status = {}; // Clear status
     }
 
     saveStore();
@@ -681,12 +704,13 @@ function deleteStudent(name){
     closeModal('studentModal');
     redrawAll();
 }
+
 /* ratings */
 function setRating(name, value){
     store.ratings[name] = value;
     saveStore();
-    renderStudentsList(); 
-    renderAssignmentsTable(currentAssignments); 
+    renderStudentsList(); // update all
+    renderAssignmentsTable(currentAssignments); // update stars in table
 }
 function renderRatings(){
   const sort = $('ratingSort') ? $('ratingSort').value : 'default';
@@ -696,6 +720,7 @@ function renderRatings(){
   if(sort === 'count_desc') {
     const counts = {};
     const weeks = 52;
+    // We need to generate with status check to get accurate counts
     const assigns = generateAssignmentsFor(new Date(), weeks, true); 
     assigns.forEach(a=> counts[a.student] = (counts[a.student]||0)+1);
     arr.sort((a,b)=>(counts[b.name]||0)-(counts[a.name]||0));
@@ -733,8 +758,7 @@ function renderRatings(){
   });
 }
 
-
-/* assignments generation (omitted for brevity, assume unchanged logic) */
+/* assignments generation */
 function generateAssignmentsFor(startDate, weeks){
   const out = [];
   const sArr = store.students;
@@ -744,6 +768,7 @@ function generateAssignmentsFor(startDate, weeks){
 
   let studentIndex = 0; 
   
+  // Přeskočíme žáky, kteří jsou nemocní/nepřítomní V OKAMŽIK GENERACE
   let attempts = 0;
   while(isStatusActive(sArr[studentIndex % sArr.length], base) && attempts < sArr.length){
       studentIndex++;
@@ -760,20 +785,24 @@ function generateAssignmentsFor(startDate, weeks){
     const sd = new Date(base.getFullYear(), base.getMonth(), base.getDate() + w*7);
     const ed = new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + 6);
     
+    // **LOGIKA PRÁZDNIN**
     const vacationPeriod = getVacationOverlap(sd, ed);
     if(vacationPeriod){
         const type = vacationPeriod.type;
-        const note = vacationPeriod.note || (type === 'holiday' ? 'Školní prázdniny' : 'Ředitelské volno'); 
+        const note = vacationPeriod.note || (type === 'holiday' ? 'Školní prázdniny' : 'Ředitelské volno'); // Použijeme poznámku z profilu prázdnin
         const studentText = type === 'holiday' ? 'PRÁZDNINY' : 'VOLNO ŘEDITELE';
         const assignedType = type === 'holiday' ? 'VACATION' : 'DIRECTOR_FREE';
         
+        // Pokud je týden prázdninový/volno, vložíme záznam a NEPŘESKOČÍME index
         out.push({start: sd, end: ed, student: studentText, note: note, type: assignedType, vacationPeriod});
-        continue; 
+        continue; // Pokračujeme na další týden bez rotace žáka
     }
     
+    // Standardní logika rotace a přeskočení nemocných/nepřítomných
     let studentObj = sArr[currentRotationIndex % sArr.length];
     attempts = 0;
     
+    // Hledáme žáka, který NENÍ nemocný/nepřítomný v tomto konkrétním týdnu
     while(isStatusActive(studentObj, sd) && attempts < sArr.length){
       currentRotationIndex++;
       studentObj = sArr[currentRotationIndex % sArr.length];
@@ -781,8 +810,10 @@ function generateAssignmentsFor(startDate, weeks){
     }
     
     if(attempts >= sArr.length) {
-        studentObj = sArr[currentRotationIndex % sArr.length]; 
+        // Všichni dostupní žáci jsou nemocní/nepřítomní i v tomto týdnu
+        studentObj = sArr[currentRotationIndex % sArr.length]; // Zadáme prvního nemocného (měl by se zvýraznit v tabulce)
     } else {
+        // Byl nalezen volný žák, index se posune na dalšího
         currentRotationIndex++;
     }
 
@@ -804,6 +835,7 @@ function renderAssignmentsTable(assigns){
     
     const isCurrentWeek = now >= row.start && now <= row.end;
     if(isCurrentWeek){ tr.style.background = 'rgba(25, 99, 235, 0.1)'; }
+    // Přidáno pro tmavý režim (aby se barva přizpůsobila)
     if(isCurrentWeek && document.body.getAttribute('data-theme') === 'dark'){
         tr.style.background = 'rgba(25, 99, 235, 0.2)';
     }
@@ -816,6 +848,7 @@ function renderAssignmentsTable(assigns){
     const td5 = document.createElement('td');
     
     if(row.type === 'VACATION' || row.type === 'DIRECTOR_FREE'){
+        // **Zobrazení prázdnin/volna**
         const isVacation = row.type === 'VACATION';
         const badgeClass = isVacation ? 'warning' : 'info';
         const badgeIcon = isVacation ? '<i class="fa fa-sun"></i>' : '<i class="fa fa-school-flag"></i>';
@@ -823,8 +856,10 @@ function renderAssignmentsTable(assigns){
         td3.innerHTML = `<span class="badge ${badgeClass}">${badgeIcon} ${row.student}</span>`;
         td4_rating.textContent = '-';
         
+        // Zde ukážeme poznámku z profilu prázdnin, ale pole pro editaci už nemáme
         td5.textContent = row.vacationPeriod.note || row.note; 
 
+        // Žluté nebo modré podbarvení
         if (document.body.getAttribute('data-theme') === 'dark') {
             tr.style.background = isVacation ? 'rgba(245, 158, 11, 0.2)' : 'rgba(96, 165, 250, 0.2)';
         } else {
@@ -832,21 +867,17 @@ function renderAssignmentsTable(assigns){
         }
         
     } else {
+        // **Zobrazení běžné služby**
         td3.textContent = row.student;
 
         if(isCurrentWeek){
+            // Zobrazení hvězdiček pro hodnocení aktuálního žáka
             const stars = document.createElement('div'); stars.className='stars';
             const r = store.ratings[row.student] || 0;
             for(let k=1;k<=5;k++){
                 const i = document.createElement('i'); i.className = 'star fa fa-star ' + (k<=r ? '' : 'inactive');
-                i.dataset.index = idx; // Použito pro získání poznámky
-                i.onclick = (e)=>{ 
-                    // Uložení poznámky před hodnocením - potřeba najít správný prvek
-                    const noteElement = document.querySelector(`#tableBody tr:nth-child(${idx + 1}) input[data-index="${idx}"]`);
-                    if(noteElement) row.note = noteElement.value;
-                    e.stopPropagation(); 
-                    setRating(row.student, k); 
-                }; 
+                i.dataset.index = k;
+                i.onclick = (e)=>{ row.note = $('tableBody').querySelector(`[data-index="${idx}"]`).value; e.stopPropagation(); setRating(row.student, k); }; 
                 stars.appendChild(i);
             }
             td4_rating.appendChild(stars);
@@ -857,7 +888,7 @@ function renderAssignmentsTable(assigns){
         const noteIn = document.createElement('input'); noteIn.type='text'; noteIn.placeholder='Poznámka...';
         noteIn.style.padding='6px'; noteIn.style.borderRadius='6px'; noteIn.style.border='1px solid var(--border)';
         noteIn.value = row.note || '';
-        noteIn.dataset.index = idx; 
+        noteIn.dataset.index = idx; // Důležité pro identifikaci v onchange/onclick
         noteIn.onchange = (e)=>{ row.note = e.target.value; };
         td5.appendChild(noteIn);
     }
@@ -866,7 +897,124 @@ function renderAssignmentsTable(assigns){
     tbody.appendChild(tr);
   });
 }
-/* utilities (omitted for brevity, assume unchanged logic) */
+
+/* exports */
+async function exportPNG(clean=false){
+  const node = document.getElementById('scheduleCard');
+  const clone = node.cloneNode(true);
+  clone.style.position='fixed'; clone.style.left='200%'; clone.style.top='0'; clone.style.padding='24px'; clone.style.background='#ffffff'; clone.style.color='#111827';
+  // Remove buttons and other interactive elements for clean export
+  clone.querySelectorAll('.exports, .controls, .muted, .badge').forEach(el => el.remove());
+  clone.querySelectorAll('input, select').forEach(el => {
+    if(el.type === 'text' || el.type === 'date' || el.tagName === 'SELECT'){
+        const text = document.createElement('span'); 
+        text.textContent = el.value || '-';
+        el.replaceWith(text);
+    } else { el.remove(); }
+  });
+  clone.querySelectorAll('.stars').forEach(el => {
+      el.replaceWith(document.createTextNode((el.querySelectorAll('.star:not(.inactive)').length || 0) + ' / 5'));
+  });
+
+  document.body.appendChild(clone);
+  
+  // Set explicit white background for clean print
+  const canvas = await html2canvas(clone, {backgroundColor:'#ffffff', scale:2});
+  
+  document.body.removeChild(clone);
+  const link = document.createElement('a'); link.download = 'rozpis.png'; link.href = canvas.toDataURL('image/png'); link.click();
+}
+
+// Point 4: Send email
+function sendEmail(){
+    let body = 'Dobrý den,\n\nzasílám rozpis služeb:\n\n';
+    body += '==================================================\n';
+    body += 'Rozpis služeb - Obořiště \n';
+    body += '==================================================\n';
+    
+    currentAssignments.forEach(r => {
+        const start = formatDate(r.start);
+        const end = formatDate(r.end);
+        let studentText = r.student;
+        // Zohlednění prázdnin a ředitelského volna
+        if(r.type === 'VACATION') studentText = 'PRÁZDNINY'; 
+        if(r.type === 'DIRECTOR_FREE') studentText = 'VOLNO ŘEDITELE'; 
+        
+        const note = r.note ? ` (Pozn.: ${r.note})` : '';
+        body += `Týden: ${start} - ${end}\n`;
+        body += `Žák/Status: ${studentText}${note}\n`;
+        body += '--------------------------------------------------\n';
+    });
+
+    const mailtoLink = `mailto:?subject=${encodeURIComponent('Rozpis služeb - Obořiště')}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink, '_self');
+}
+
+
+/* sorting */
+function applySort(){
+  const sel = $('sortSelect').value;
+  if(!currentAssignments || currentAssignments.length===0) return;
+  let arr = [...currentAssignments];
+  if(sel==='date'){ arr.sort((a,b)=> new Date(a.start) - new Date(b.start)); }
+  if(sel==='student_asc'){ arr.sort((a,b)=> a.student.localeCompare(b.student,'cs')); }
+  if(sel==='student_desc'){ arr.sort((a,b)=> b.student.localeCompare(a.student,'cs')); }
+  renderAssignmentsTable(arr);
+}
+
+/* stats */
+function computeStats(){
+  const f = $('statFrom').value ? new Date($('statFrom').value) : null;
+  const t = $('statTo').value ? new Date($('statTo').value) : null;
+  if(!f || !t){ alert('Vyber prosím obě data (od i do).'); return; }
+  
+  // To cover the range, we need to generate enough weeks starting from 'f'
+  const weeks = Math.ceil((t - f)/(7*24*60*60*1000)) + 4; 
+  const assigns = generateAssignmentsFor(f, weeks);
+  
+  const counts = {};
+  assigns.forEach(a=>{
+    // Only count assignments that start or end within the filter range AND are not a free day
+    if(new Date(a.start) >= f && new Date(a.start) <= t && a.type === 'ASSIGNMENT'){
+      counts[a.student] = (counts[a.student]||0) + 1;
+    }
+  });
+  
+  const items = Object.keys(counts).map(name => ({name, count: counts[name]})).sort((a,b)=>b.count-a.count);
+  const cont = $('statCards'); cont.innerHTML = '';
+  items.forEach(it=>{
+    const card = document.createElement('div'); card.className='stat-card';
+    card.innerHTML = `<div style="font-weight:800">${it.name}</div><div class="muted">Počet úklidů: <span style="font-weight:800">${it.count}</span></div>`;
+    cont.appendChild(card);
+  });
+}
+
+/* filters generate */
+function applyFilter(){
+  const f = $('filterFrom').value ? new Date($('filterFrom').value) : new Date();
+  const t = $('filterTo').value ? new Date($('filterTo').value) : new Date(f.getFullYear(), f.getMonth(), f.getDate() + 28);
+  const weeks = Math.max(1, Math.ceil((t - f)/(7*24*60*60*1000)) + 1); // +1 week safety margin
+  
+  // ensure we cover all students: if students > weeks, extend weeks so each student appears at least once
+  const weeksAdjusted = Math.max(weeks, store.students.length);
+  const assigns = generateAssignmentsFor(f, weeksAdjusted);
+  
+  // Filter assignments to show only those falling between f and t
+  const filteredAssigns = assigns.filter(a => new Date(a.start) >= f && new Date(a.end) <= t);
+  renderAssignmentsTable(filteredAssigns);
+}
+
+/* generate now */
+function generateNow(){
+  const from = $('genFrom').value ? new Date($('genFrom').value) : new Date();
+  let weeks = parseInt($('genWeeks').value,10) || 4;
+  // if more students than weeks, extend weeks so every student gets at least one turn
+  weeks = Math.max(weeks, store.students.length);
+  const assigns = generateAssignmentsFor(from, weeks);
+  renderAssignmentsTable(assigns);
+}
+
+/* utilities */
 function pickColor(seed){
   const colors = ['#f97316','#ef4444','#f59e0b','#10b981','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
   let s=0; for(let i=0;i<seed.length;i++) s += seed.charCodeAt(i);
@@ -881,15 +1029,21 @@ function shadeColor(hex, percent){
   r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
   return '#' + ( (1<<24) + (r<<16) + (g<<8) + b ).toString(16).slice(1);
 }
-/* other functions (exportPNG, sendEmail, applySort, computeStats, applyFilter, generateNow, renderVacationPeriods, openVacationModal, saveVacationProfile, addVacationPeriod, deleteVacationPeriod, clearAll, exportAllJSON, importAllJSON, addStudent, redrawAll - OMITTED FOR BREVITY, ASSUME UNCHANGED LOGIC) */
+function escapeHtml(s){ 
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
+}
+
 
 /* settings - VACATION (NOVÁ LOGIKA PRO PROFILY) */
+
+// Globální proměnná pro uložení aktuálně upravovaného období (pro modál)
 let currentVacation = null;
 
 function renderVacationPeriods(){
     const listContainer = $('vacationList');
     listContainer.innerHTML = '';
     
+    // Seřazení podle data "Od"
     const sortedPeriods = [...store.vacationPeriods].sort((a, b) => new Date(a.from) - new Date(b.from));
 
     if(sortedPeriods.length === 0){
@@ -900,6 +1054,7 @@ function renderVacationPeriods(){
     sortedPeriods.forEach((period) => {
         const item = document.createElement('div');
         item.className = 'vacation-item';
+        // Nastavíme funkci pro otevření modálu s referencí na objekt
         item.onclick = () => openVacationModal(period); 
         
         const typeText = period.type === 'holiday' ? 'Školní prázdniny' : 'Ředitelské volno';
@@ -909,16 +1064,19 @@ function renderVacationPeriods(){
         const infoDiv = document.createElement('div');
         infoDiv.className = 'info';
 
+        // Titulek + Badge
         const titleLine = document.createElement('div');
         titleLine.className = 'title-text';
         titleLine.innerHTML = `${icon} ${typeText} <span class="badge ${typeBadgeClass}" style="margin-left:8px;">${period.type === 'holiday' ? 'Prázdniny' : 'Volno'}</span>`;
         infoDiv.appendChild(titleLine);
 
+        // Termín
         const dates = document.createElement('div');
         dates.className = 'dates';
         dates.textContent = `${formatDate(period.from)} – ${formatDate(period.to)}`;
         infoDiv.appendChild(dates);
 
+        // Poznámka
         if(period.note){
             const note = document.createElement('div');
             note.className = 'muted';
@@ -928,9 +1086,11 @@ function renderVacationPeriods(){
 
         item.appendChild(infoDiv);
 
+        // Tlačítko pro rychlé smazání (volitelné, ale užitečné)
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn danger action-small';
         deleteBtn.innerHTML = '<i class="fa fa-trash"></i> Smazat';
+        // Zabráníme prokliknutí, aby se neotevřel modál
         deleteBtn.onclick = (e) => { e.stopPropagation(); deleteVacationPeriod(period); };
         item.appendChild(deleteBtn);
 
@@ -939,6 +1099,7 @@ function renderVacationPeriods(){
 }
 
 function openVacationModal(period){
+    // Uložíme referenci na upravovaný objekt
     currentVacation = period; 
     if(!currentVacation) return;
 
@@ -949,10 +1110,12 @@ function openVacationModal(period){
     $('modalVacationTitle').innerHTML = `<i class="fa fa-calendar-check"></i> ${titleText}`;
     $('modalVacationTypeBadge').innerHTML = `<span class="badge ${badgeClass}">${typeText}</span>`;
     
+    // Nastavení hodnot pro úpravu
     $('modalVacationFrom').value = currentVacation.from;
     $('modalVacationTo').value = currentVacation.to;
     $('modalVacationNote').value = currentVacation.note || '';
 
+    // Akce pro smazání
     $('modalVacationDeleteBtn').onclick = () => {
         if(!confirm(`Opravdu smazat volno ${formatDate(currentVacation.from)} - ${formatDate(currentVacation.to)}?`)) return;
         deleteVacationPeriod(currentVacation);
@@ -978,13 +1141,17 @@ function saveVacationProfile(){
         return;
     }
 
+    // Odstraníme starý objekt (protože se mohly změnit from/to, které slouží jako unikátní klíč)
+    // Tady musíme najít index původního objektu, protože se mohlo změnit from/to, které by mohlo být
+    // použito jako referenční klíč pro smazání. Nejlepší je pracovat s referencí
+    // Ale v našem případě je to jednodušší - změníme přímo vlastnosti objektu:
     currentVacation.from = newFrom;
     currentVacation.to = newTo;
     currentVacation.note = newNote;
     
     saveStore();
     closeModal('vacationModal');
-    redrawAll(); 
+    redrawAll(); // Přegeneruje rozpis s novými prázdninami
 }
 
 function addVacationPeriod(){
@@ -1001,32 +1168,41 @@ function addVacationPeriod(){
         return;
     }
     
+    // Kontrola duplicity (kontrola pouze data OD a DO, typ se může lišit)
     if(store.vacationPeriods.some(p => p.from === from && p.to === to && p.type === type)){
         alert('Toto období je již přidáno s tímto typem.');
         return;
     }
 
+    // Přidáme s prázdnou poznámkou, kterou lze doplnit v modálu
     store.vacationPeriods.push({ from, to, type, note: '' }); 
     saveStore();
     renderVacationPeriods();
     generateNow(); 
     
+    // Vyčištění formuláře
     $('vacationFrom').value = '';
     $('vacationTo').value = '';
 }
 
+// Funkce pro smazání, přijímá referenci na objekt (period)
 function deleteVacationPeriod(period){
+    // Filtrace a smazání daného období (hledáme v poli přesně ten objekt)
     const index = store.vacationPeriods.findIndex(p => p.from === period.from && p.to === period.to && p.type === period.type);
     if(index > -1) {
         store.vacationPeriods.splice(index, 1);
     } else {
+        // Fallback pro jistotu (mělo by se smazat přes referenci)
         store.vacationPeriods = store.vacationPeriods.filter(p => !(p.from === period.from && p.to === period.to && p.type === period.type));
     }
 
     saveStore();
     renderVacationPeriods();
-    generateNow(); 
+    generateNow(); // Přegeneruje rozpis
 }
+
+
+/* settings - DATA */
 function clearAll(){
   if(!confirm('Opravdu vymazat všechna data?')) return;
   localStorage.removeItem(LS_KEY); localStorage.removeItem(LS_RATING); localStorage.removeItem(LS_VACATION);
@@ -1048,7 +1224,7 @@ function importAllJSON(event){
     if (!file) return;
 
     if(!confirm('Opravdu nahrát data z JSON souboru? Stávající data budou PŘEPSÁNA.')) {
-        event.target.value = ''; 
+        event.target.value = ''; // Reset file input
         return;
     }
 
@@ -1056,6 +1232,7 @@ function importAllJSON(event){
     reader.onload = function(e){
         try{
             const data = JSON.parse(e.target.result);
+            // Zajištění zpětné kompatibility a správného pole
             const importedVacation = data.vacationPeriods || (data.vacation && data.vacation.from && data.vacation.to ? [{...data.vacation, type:'holiday', note: data.vacation.note || ''}] : []);
             
             if(data.students && data.ratings && Array.isArray(importedVacation)){
@@ -1071,10 +1248,12 @@ function importAllJSON(event){
         } catch(err){
             alert('Chyba při zpracování JSON souboru: ' + err.message);
         }
-        event.target.value = ''; 
+        event.target.value = ''; // Reset file input
     };
     reader.readAsText(file);
 }
+
+/* redraw / orchestrace */
 function redrawAll(){
   loadStore();
   todayShort();
@@ -1082,8 +1261,9 @@ function redrawAll(){
   if(!store.ratings) store.ratings = {};
   if(!store.vacationPeriods) store.vacationPeriods = []; 
   renderStudentsList();
-  renderVacationPeriods(); 
+  renderVacationPeriods(); // Aktualizace UI prázdnin
   
+  // set defaults for date inputs if empty
   const now = new Date();
   if(!$('genFrom').value) $('genFrom').value = now.toISOString().slice(0,10);
   const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate()+28);
@@ -1092,14 +1272,18 @@ function redrawAll(){
   if(!$('statFrom').value) $('statFrom').value = now.toISOString().slice(0,10);
   if(!$('statTo').value) $('statTo').value = tom.toISOString().slice(0,10);
 
+  // initial assignments
   const weeks = Math.max(4, store.students.length);
   const assigns = generateAssignmentsFor(new Date(), weeks);
   renderAssignmentsTable(assigns);
   renderRatings();
 }
+
+/* add student */
 function addStudent(){
   const val = $('newStudent').value.trim();
   if(!val) return alert('Zadej jméno žáka.');
+  // prevent duplicates
   if((store.students||[]).some(s=>s.name.toLowerCase()===val.toLowerCase())){ alert('Tento žák je již v seznamu.'); return; }
   store.students.push({name: val, note: '', status: {}});
   saveStore();
@@ -1107,11 +1291,13 @@ function addStudent(){
   redrawAll();
 }
 
+
 /* theme & starfield animation (rest of the file remains the same) */
 let starfieldCtx = null;
 let stars = [];
 let starAnimId = null;
 
+// Zajišťujeme přístup k devicePixelRatio
 const devicePixelRatio = window.devicePixelRatio || 1;
 
 function initStarfield(){
@@ -1135,45 +1321,29 @@ function initStarfield(){
       r: Math.random() * 1.2 + 0.3,
       vx: (Math.random()-0.5)*0.02,
       vy: (Math.random()-0.5)*0.02,
-      twinkle: Math.random()*1.5,
-      // Přidání vrstev (depth) pro paralaxu při scrollování
-      depth: Math.random() * 2 + 1, // 1 (nejblíže) až 3 (nejdále)
+      twinkle: Math.random()*1.5
     });
   }
 }
-let scrollOffset = 0;
 
 function animateStarfield(time){
   if(!starfieldCtx) return;
   starfieldCtx.clearRect(0,0,window.innerWidth,window.innerHeight);
   starfieldCtx.globalCompositeOperation = 'lighter';
   stars.forEach(s=>{
-    // Pohyb hvězdy v čase (pomalejší, aby se nepletl s paralaxou)
-    s.x += s.vx * 0.2 * (1 + Math.sin(time/1000 + s.twinkle));
-    s.y += s.vy * 0.2 * (1 + Math.cos(time/1100 + s.twinkle));
-    
-    // Započtení Scroll Parallaxy
-    const scrollYAdjusted = scrollOffset / s.depth;
-    
-    // Vykreslení s paralaxou
-    let drawY = s.y + scrollYAdjusted;
-    
-    // Zpětné posouvání do viditelného okna, aby hvězdy nevymizely
+    s.x += s.vx * (1 + Math.sin(time/1000 + s.twinkle));
+    s.y += s.vy * (1 + Math.cos(time/1100 + s.twinkle));
     if(s.x < 0) s.x = window.innerWidth;
     if(s.x > window.innerWidth) s.x = 0;
-    
-    // Použijeme modulo pro Y, abychom simulovali nekonečné pozadí při scrollování
-    drawY = drawY % (window.innerHeight * 2); 
-    if(drawY < -window.innerHeight) drawY += window.innerHeight * 2;
-    if(drawY > window.innerHeight) drawY -= window.innerHeight * 2;
-    
-    const g = starfieldCtx.createRadialGradient(s.x, drawY, 0, s.x, drawY, s.r*6);
+    if(s.y < 0) s.y = window.innerHeight;
+    if(s.y > window.innerHeight) s.y = 0;
+    const g = starfieldCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r*6);
     g.addColorStop(0, 'rgba(255,255,255,0.95)');
     g.addColorStop(0.2, 'rgba(255,255,255,0.6)');
     g.addColorStop(1, 'rgba(255,255,255,0.0)');
     starfieldCtx.fillStyle = g;
     starfieldCtx.beginPath();
-    starfieldCtx.arc(s.x, drawY, s.r*3, 0, Math.PI*2);
+    starfieldCtx.arc(s.x, s.y, s.r*3, 0, Math.PI*2);
     starfieldCtx.fill();
   });
   starAnimId = requestAnimationFrame(animateStarfield);
@@ -1200,7 +1370,6 @@ function toggleTheme(){
   body.setAttribute('data-theme', t);
   updateThemeButton(t);
   if(t === 'dark'){ 
-    initStarfield();
     startStarfield(); 
   } else { 
     stopStarfield(); 
@@ -1231,18 +1400,11 @@ window.addEventListener('mousemove',(e)=>{
   const cx = e.clientX / window.innerWidth - 0.5;
   const cy = e.clientY / window.innerHeight - 0.5;
   stars.forEach((s,i)=>{
+    // small shift based on cursor
     s.x += cx * 0.6 * (i%3===0 ? 0.6 : 0.2);
     s.y += cy * 0.6 * (i%3===0 ? 0.6 : 0.2);
   });
 });
-
-/* SCROLL PARALLAX - NOVÁ LOGIKA */
-window.addEventListener('scroll', () => {
-    if(document.body.getAttribute('data-theme') === 'dark'){
-        // Uložení aktuálního scroll offsetu pro použití v animateStarfield
-        scrollOffset = window.scrollY; 
-    }
-}, {passive: true});
 
 /* init */
 (function init(){
